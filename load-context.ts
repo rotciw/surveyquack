@@ -13,5 +13,9 @@ type Cloudflare = Omit<PlatformProxy<Env>, "dispose">;
 declare module "@remix-run/cloudflare" {
   interface AppLoadContext {
     cloudflare: Cloudflare;
+    env: {
+      SUPABASE_URL: string;
+      SUPABASE_ANON_KEY: string;
+    };
   }
 }
