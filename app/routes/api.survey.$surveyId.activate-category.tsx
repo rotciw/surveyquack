@@ -6,7 +6,6 @@ export const action: ActionFunction = async ({ request, params }) => {
   const { surveyId } = params;
   const formData = await request.formData();
   const categoryId = formData.get("categoryId") as string;
-
   const { data, error } = await supabase
     .from('surveys')
     .update({ activeCategory: categoryId })

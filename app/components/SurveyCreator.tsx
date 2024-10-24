@@ -2,30 +2,19 @@ import React, { useState, useEffect } from "react";
 import { useFetcher } from "@remix-run/react";
 import { Survey, Category, Question } from "~/models/survey";
 
-export function SurveyCreator({ user }: SurveyCreatorProps) {
+export function SurveyCreator({ user, surveyId, initialSurvey }: { user: string; surveyId?: string; initialSurvey: Survey }) {
   const fetcher = useFetcher();
-  const [survey, setSurvey] = useState<Survey>({
-    id: "",
-    title: "Untitled Survey",
-    user_id: user.id.toString(),
-    categories: [
-      {
-        id: crypto.randomUUID(),
-        title: "Untitled Category",
-        questions: [
-          {
-            id: crypto.randomUUID(),
-            title: "Untitled Question",
-            type: "multiple_choice",
-            options: ["Option 1"],
-          },
-        ],
-      },
-    ],
-  });
+  const [survey, setSurvey] = useState<Survey>(initialSurvey);
+
   const [activeCategory, setActiveCategory] = useState(0);
   const [activeQuestion, setActiveQuestion] = useState(0);
   const [uniqueUrl, setUniqueUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (fetcher.data && fetcher.data.survey) {
+      setSurvey(fetcher.data.survey);
+    }
+  }, [fetcher.data]);
 
   useEffect(() => {
     if (fetcher.data && fetcher.data.url) {
@@ -207,6 +196,13 @@ export function SurveyCreator({ user }: SurveyCreatorProps) {
     setSurvey({ ...survey, categories: newCategories });
   };
 
+  const handleSave = () => {
+    fetcher.submit(
+      { survey: JSON.stringify(survey) },
+      { method: "post", action: "/api/survey/upsert" }
+    );
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
       <input
@@ -218,7 +214,7 @@ export function SurveyCreator({ user }: SurveyCreatorProps) {
       />
       <div className="flex">
         <div className="w-1/4 pr-4 border-r">
-          {survey.categories.map((category, index) => (
+          {survey.categories?.map((category, index) => (
             <div
               key={category.id}
               className={`p-2 mb-2 cursor-pointer rounded ${
@@ -262,12 +258,12 @@ export function SurveyCreator({ user }: SurveyCreatorProps) {
         <div className="w-3/4 pl-4">
           <input
             type="text"
-            value={survey.categories[activeCategory].title}
+            value={survey?.categories ? survey.categories[activeCategory]?.title : ''}
             onChange={(e) => updateCategoryTitle(activeCategory, e.target.value)}
             className="text-xl font-semibold mb-4 w-full border-b border-gray-200 focus:border-indigo-500 focus:outline-none"
             placeholder="Untitled Category"
           />
-          {survey.categories[activeCategory].questions.map((question, index) => (
+          {survey.categories && survey.categories[activeCategory]?.questions.map((question, index) => (
             <div
               key={question.id}
               className={`p-4 mb-4 border rounded ${
@@ -391,6 +387,7 @@ export function SurveyCreator({ user }: SurveyCreatorProps) {
       >
         Create Survey
       </button>
+      <button onClick={handleSave}>Save Survey</button>
       {uniqueUrl && (
         <div className="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
           Survey created! Access it here: <a href={uniqueUrl} className="underline">{uniqueUrl}</a>

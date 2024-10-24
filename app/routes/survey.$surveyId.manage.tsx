@@ -1,66 +1,56 @@
-import { useLoaderData, useFetcher } from "@remix-run/react";
-import { json, LoaderFunction, redirect } from "@remix-run/cloudflare";
+import { useLoaderData } from "@remix-run/react";
+import { json, LoaderFunction } from "@remix-run/cloudflare";
 import { authenticator } from "~/utils/auth.server";
 import { supabase } from "~/utils/supabase.server";
+import { SurveyCreator } from "~/components/SurveyCreator";
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   const user = await authenticator.isAuthenticated(request, {
-    failureRedirect: "/login",
+    failureRedirect: "/",
   });
 
   const { surveyId } = params;
 
+  // Fetch survey data
   const { data: survey, error: surveyError } = await supabase
     .from('surveys')
-    .select(`
-      *,
-      categories:categories(
-        *,
-        questions:questions(
-          *
-        )
-      )
-    `)
+    .select('*')
     .eq('id', surveyId)
     .single();
 
   if (surveyError) throw new Error(surveyError.message);
 
+  if (!survey) {
+    throw new Response("Survey not found", { status: 404 });
+  }
+
   if (survey.user_id !== user.id) {
     throw new Response("Unauthorized", { status: 403 });
   }
 
-  return json({ survey });
+  // Fetch categories with their questions
+  const { data: categories, error: categoriesError } = await supabase
+    .from('categories')
+    .select(`
+      id, 
+      title,
+      questions (id, title, type, options, scale_start, scale_end, scale_left_label, scale_right_label)
+    `)
+    .eq('survey_id', surveyId);
+
+  if (categoriesError) throw new Error(categoriesError.message);
+
+  const fullSurvey = {
+    ...survey,
+    categories: categories || []
+  };
+  console.log(fullSurvey);
+
+  return json({ survey: fullSurvey });
 };
 
 export default function ManageSurvey() {
   const { survey } = useLoaderData();
-  const fetcher = useFetcher();
-
-  const advanceCategory = (categoryId) => {
-    fetcher.submit(
-      { categoryId },
-      { method: "post", action: `/api/survey/${survey.id}/advance-category` }
-    );
-  };
-
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">{survey.title}</h1>
-      <h2 className="text-xl font-semibold mb-2">Categories</h2>
-      <ul>
-        {survey.categories.map((category) => (
-          <li key={category.id} className="mb-2 flex items-center">
-            <span className="mr-2">{category.title}</span>
-            <button
-              onClick={() => advanceCategory(category.id)}
-              className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
-            >
-              Advance
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+  
+  return <SurveyCreator user={survey.user_id} surveyId={survey.id} initialSurvey={survey} />;
 }
