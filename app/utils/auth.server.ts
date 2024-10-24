@@ -11,9 +11,8 @@ const googleStrategy = new GoogleStrategy(
     callbackURL: "http://localhost:5173/auth/google/callback",
   },
   async ({ accessToken, refreshToken, extraParams, profile }) => {
-    // Ensure we always have a valid ID
-    console.log(profile);
     const id = profile.id || `google-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     return {
       id,
       email: profile.emails?.[0]?.value || '',

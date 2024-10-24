@@ -19,7 +19,7 @@ export const loader: LoaderFunction = async ({ params }) => {
   
     const { data: categories, error: categoriesError } = await supabase
       .from('categories')
-      .select('id, title, questions(id, title, subtitle, type, options)')
+      .select('id, title, questions(id, title, subtitle, type, options, scale_start, scale_end, scale_left_label, scale_right_label)')
       .eq('survey_id', surveyId);
   
     if (categoriesError) throw new Error(categoriesError.message);
@@ -34,6 +34,7 @@ export const loader: LoaderFunction = async ({ params }) => {
 
 export default function SurveyPage() {
   const { survey } = useLoaderData<{ survey: Survey }>();
+  console.log(survey.categories[0].questions);
 
   return (
     <div className="container mx-auto p-4">

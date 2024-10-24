@@ -10,13 +10,21 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   const { surveyId } = params;
 
-  const { data: survey, error } = await supabase
+  const { data: survey, error: surveyError } = await supabase
     .from('surveys')
-    .select('*, categories(*)')
+    .select(`
+      *,
+      categories:categories(
+        *,
+        questions:questions(
+          *
+        )
+      )
+    `)
     .eq('id', surveyId)
     .single();
 
-  if (error) throw new Error(error.message);
+  if (surveyError) throw new Error(surveyError.message);
 
   if (survey.user_id !== user.id) {
     throw new Response("Unauthorized", { status: 403 });
