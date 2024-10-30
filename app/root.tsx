@@ -5,9 +5,8 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  Link,
   isRouteErrorResponse,
-  useRouteError,
+  useRouteError
 } from "@remix-run/react";
 
 import "./tailwind.css";
@@ -50,17 +49,26 @@ export default function App() {
 
 export function ErrorBoundary() {
   const error = useRouteError();
-  console.error('Root error boundary caught:', error);
+  console.error('Root error boundary:', {
+    error,
+    message: error instanceof Error ? error.message : 'Unknown error',
+    stack: error instanceof Error ? error.stack : undefined
+  });
 
   if (isRouteErrorResponse(error)) {
     return (
       <html>
         <head>
           <title>Error {error.status}</title>
+          <Meta />
+          <Links />
         </head>
         <body>
-          <h1>Error {error.status}</h1>
-          <p>{error.data}</p>
+          <div className="error-container">
+            <h1>Error {error.status}</h1>
+            <pre>{JSON.stringify(error.data, null, 2)}</pre>
+          </div>
+          <Scripts />
         </body>
       </html>
     );
@@ -69,11 +77,20 @@ export function ErrorBoundary() {
   return (
     <html>
       <head>
-        <title>Unknown Error</title>
+        <title>Application Error</title>
+        <Meta />
+        <Links />
       </head>
       <body>
-        <h1>Unknown Error</h1>
-        <p>{error instanceof Error ? error.message : "Unknown error occurred"}</p>
+        <div className="error-container">
+          <h1>Application Error</h1>
+          <pre>
+            {error instanceof Error 
+              ? `${error.message}\n\n${error.stack}`
+              : 'Unknown error occurred'}
+          </pre>
+        </div>
+        <Scripts />
       </body>
     </html>
   );

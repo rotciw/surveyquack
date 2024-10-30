@@ -8,9 +8,28 @@ import * as build from "../build/server";
   
 export const onRequest = createPagesFunctionHandler({
     build,
-    getLoadContext: (context) => ({
-        platform: context.platform,
-        env: context.env,
-        cloudflare: context
-    })
+    getLoadContext: (context) => {
+        // Validate environment variables
+        const requiredEnvVars = [
+            'SESSION_SECRET',
+            'SUPABASE_URL',
+            'SUPABASE_ANON_KEY',
+            'GOOGLE_CLIENT_ID',
+            'GOOGLE_CLIENT_SECRET'
+        ];
+        
+        const missingEnvVars = requiredEnvVars.filter(
+            key => !context.env[key]
+        );
+
+        if (missingEnvVars.length > 0) {
+            console.error('Missing required environment variables:', missingEnvVars);
+        }
+
+        return {
+            platform: context.platform,
+            env: context.env,
+            cloudflare: context
+        };
+    }
 });
