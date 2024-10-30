@@ -6,3 +6,7 @@ html,
 body {
   @apply bg-gray-50;
 }
+
+.clip-arrow {
+  clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
+}

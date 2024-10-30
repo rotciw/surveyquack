@@ -4,6 +4,7 @@ import { useFetcher } from "@remix-run/react";
 import type { Survey, Answer } from "~/models/survey";
 import { Toast } from "./Toast";
 import { ProgressBar } from "./ProgressBar";
+import { WheelModal } from "./WheelModal";
 
 export function SurveyTaker({ 
   survey: initialSurvey, 
@@ -19,7 +20,10 @@ export function SurveyTaker({
   const [activeCategory, setActiveCategory] = useState<string | undefined>(survey.active_category);
   const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | 'submitted' | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(initialIsSubmitted);
+  const [showWheel, setShowWheel] = useState(false);
   const fetcher = useFetcher();
+
+
 
   useEffect(() => {
     const eventSource = new EventSource(`/api/survey/${survey.id}/status`);
@@ -127,6 +131,7 @@ export function SurveyTaker({
       );
       setIsSubmitted(true);
       setSaveStatus('submitted');
+      setShowWheel(true);
     }
   };
 
@@ -154,7 +159,6 @@ export function SurveyTaker({
     };
   };
 
-  const progress = calculateProgress();
 
   return (
     <motion.div 
@@ -203,6 +207,14 @@ export function SurveyTaker({
             Your answers have been submitted. Please wait for the survey administrator to advance to the next category.
           </p>
         </div>
+      )}
+
+      {isSubmitted && showWheel && (
+        <WheelModal
+          isOpen={showWheel}
+          onClose={() => setShowWheel(false)}
+          onResult={() => {setShowWheel(false)}}
+        />
       )}
 
       {categoriesToShow.map((category) => (
