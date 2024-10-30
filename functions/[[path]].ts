@@ -5,4 +5,12 @@ import { createPagesFunctionHandler } from "@remix-run/cloudflare-pages";
 // eslint-disable-next-line import/no-unresolved
 import * as build from "../build/server";
 
-export const onRequest = createPagesFunctionHandler({ build });
+  
+export const onRequest = createPagesFunctionHandler({
+    build,
+    getLoadContext: (context) => ({
+        platform: context.platform,
+        env: context.env,
+        cloudflare: context
+    })
+});
