@@ -192,8 +192,8 @@ export function SurveyTaker({
         className="mb-8"
       >
         <ProgressBar 
-          totalQuestions={progress.totalQuestions}
-          answeredQuestions={progress.answeredQuestions}
+          totalCategories={survey.categories.length}
+          currentCategoryIndex={survey.categories.findIndex(cat => cat.id === activeCategory)}
         />
       </motion.div>
 
