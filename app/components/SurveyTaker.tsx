@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useFetcher } from "@remix-run/react";
 import type { Survey, Answer } from "~/models/survey";
 import { Toast } from "./Toast";
+import { ProgressBar } from "./ProgressBar";
 
 export function SurveyTaker({ 
   survey: initialSurvey, 
@@ -126,11 +127,26 @@ export function SurveyTaker({
     }
   }, [activeCategory, survey.categories, survey.active_category]);
 
+  const calculateProgress = () => {
+    const totalQuestions = survey.categories.reduce((acc, category) => 
+      acc + category.questions.length, 0
+    );
+    
+    const answeredQuestions = answers.length;
+
+    return {
+      totalQuestions,
+      answeredQuestions
+    };
+  };
+
+  const progress = calculateProgress();
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="max-w-3xl mx-auto p-8 bg-white relative"
+      className="max-w-3xl mx-auto p-8 bg-white relative mt-12"
     >
       {saveStatus && (
         <AnimatePresence>
@@ -155,6 +171,17 @@ export function SurveyTaker({
       >
         {survey.title}
       </motion.h1>
+
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <ProgressBar 
+          totalQuestions={progress.totalQuestions}
+          answeredQuestions={progress.answeredQuestions}
+        />
+      </motion.div>
 
       {isSubmitted && (
         <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
