@@ -1,9 +1,11 @@
 import type { LoaderFunction } from "@remix-run/cloudflare";
-import { supabase } from "~/utils/supabase.server";
+import { getSupabaseClient } from "~/utils/supabase.server";
 
-export const loader: LoaderFunction = async ({ request, params }) => {
+export const loader: LoaderFunction = async ({ request, params, context }) => {
   const { surveyId } = params;
+  const supabase = getSupabaseClient(context);
 
+  if (!surveyId) throw new Error("Survey ID is required");
   return new Response(
     new ReadableStream({
       async start(controller) {
@@ -25,7 +27,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         }
 
         if (survey?.active_category) {
-          sendCategory(survey.active_category);
+          sendCategory(String(survey.active_category));
         }
 
         // Subscribe to changes
@@ -41,7 +43,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
             },
             (payload) => {
               if (payload.new.active_category) {
-                sendCategory(payload.new.active_category);
+                sendCategory(String(payload.new.active_category));
               }
             }
           )

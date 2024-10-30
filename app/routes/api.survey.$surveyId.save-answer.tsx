@@ -1,20 +1,21 @@
 import { ActionFunction, json } from "@remix-run/cloudflare";
-import { supabase } from "~/utils/supabase.server";
+import { getSupabaseClient } from "~/utils/supabase.server";
 import { getSession, commitSession } from "~/utils/session.server";
 import { v4 as uuidv4 } from 'uuid';
 
-export const action: ActionFunction = async ({ request, params }) => {
+export const action: ActionFunction = async ({ request, params, context }) => {
   try {
     const { surveyId } = params;
     const formData = await request.formData();
     const answer = JSON.parse(formData.get("answer") as string);
     
-    const session = await getSession(request.headers.get("Cookie"));
+    const session = await getSession(context, request.headers.get("Cookie"));
     let takerId = session.get("takerId");
     if (!takerId) {
       takerId = uuidv4();
       session.set("takerId", takerId);
     }
+    const supabase = getSupabaseClient(context);
 
     // Use upsert with the correct column combination
     const { error } = await supabase
@@ -41,7 +42,9 @@ export const action: ActionFunction = async ({ request, params }) => {
       { success: true },
       { 
         headers: {
-          "Set-Cookie": await commitSession(session)
+          "Set-Cookie": await commitSession(context, session, {
+            maxAge: 60 * 60 * 24 * 30 // 30 days
+          })
         }
       }
     );

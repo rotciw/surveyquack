@@ -1,11 +1,12 @@
 import type { ActionFunction, LoaderFunction } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
-import { supabase } from "~/utils/supabase.server";
+import { getSupabaseClient } from "~/utils/supabase.server";
 import type { Survey } from "~/models/survey";
 import { getSession } from "~/utils/session.server";
 
-export const loader: LoaderFunction = async ({ request }) => {
-  const session = await getSession(request.headers.get("Cookie"));
+export const loader: LoaderFunction = async ({ request, context }) => {
+  const supabase = getSupabaseClient(context);
+  const session = await getSession(context, request.headers.get("Cookie"));
   const user = session.get("user");
 
   if (!user) {
@@ -22,8 +23,9 @@ export const loader: LoaderFunction = async ({ request }) => {
 };
 
 
-export const action: ActionFunction = async ({ request }) => {
-  const session = await getSession(request.headers.get("Cookie"));
+export const action: ActionFunction = async ({ request, context  }) => {
+  const supabase = getSupabaseClient(context);
+  const session = await getSession(context, request.headers.get("Cookie"));
   const user = session.get("user");
 
   if (!user) {

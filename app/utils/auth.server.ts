@@ -1,25 +1,27 @@
 import { Authenticator } from "remix-auth";
 import { GoogleStrategy } from "remix-auth-google";
-import { sessionStorage } from "./session.server";
+import { getSessionStorage } from "./session.server";
+import type { AppLoadContext } from "@remix-run/cloudflare";
 
-export const authenticator = new Authenticator(sessionStorage);
+export function getAuthenticator(context: AppLoadContext) {
+  const authenticator = new Authenticator(getSessionStorage(context));
 
-const googleStrategy = new GoogleStrategy(
-  {
-    clientID: ENV.GOOGLE_CLIENT_ID as string,
-    clientSecret: ENV.GOOGLE_CLIENT_SECRET as string,
-    callbackURL: "http://localhost:5173/auth/google/callback",
-  },
-  async ({ accessToken, refreshToken, extraParams, profile }) => {
-    const id = profile.id || `google-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    return {
-      id,
-      email: profile.emails?.[0]?.value || '',
-      name: profile.displayName || '',
-      avatar_url: profile.photos?.[0]?.value || '',
-    };
-  }
-);
+  const googleStrategy = new GoogleStrategy(
+    {
+      clientID: (context.env as any).GOOGLE_CLIENT_ID,
+      clientSecret: (context.env as any).GOOGLE_CLIENT_SECRET,
+      callbackURL: "/auth/google/callback",
+    },
+    async ({ profile }) => {
+      return {
+        id: profile.id,
+        email: profile.emails?.[0]?.value,
+        name: profile.displayName,
+        avatar_url: profile.photos?.[0]?.value,
+      };
+    }
+  );
 
-authenticator.use(googleStrategy);
+  authenticator.use(googleStrategy);
+  return authenticator;
+}

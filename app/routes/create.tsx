@@ -11,8 +11,8 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction = async ({ request }) => {
-  const session = await getSession(request.headers.get("Cookie"));
+export const loader: LoaderFunction = async ({ request, context }) => {
+  const session = await getSession(context, request.headers.get("Cookie"));
   const user = session.get("user");
   return json<LoaderData>({ user });
 };

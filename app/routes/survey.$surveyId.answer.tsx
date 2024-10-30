@@ -4,10 +4,13 @@ import type { LoaderFunction } from "@remix-run/cloudflare";
 import { json } from "@remix-run/cloudflare";
 import { SurveyTaker } from "~/components/SurveyTaker";
 import type { Survey } from "~/models/survey";
-import { supabase } from "~/utils/supabase.server";
+import { getSupabaseClient } from "~/utils/supabase.server";
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ params, context }) => {
+    const supabase = getSupabaseClient(context);
     const { surveyId } = params;
+
+    if (!surveyId) throw new Error("Survey ID is required");
     const { data: survey, error: surveyError } = await supabase
       .from('surveys')
       .select('id, title, active_category, status')

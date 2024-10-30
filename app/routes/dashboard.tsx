@@ -1,14 +1,17 @@
 import { data, json, LoaderFunction } from "@remix-run/cloudflare";
 import { useLoaderData } from "@remix-run/react";
-import { supabase } from "~/utils/supabase.server";
+import { getSupabaseClient } from "~/utils/supabase.server";
 import { Dashboard } from "~/components/Dashboard";
-import { authenticator } from "~/utils/auth.server";
+import { getAuthenticator } from "~/utils/auth.server";
 import { Survey } from "~/models/survey";
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: LoaderFunction = async ({ request, context }) => {
+  const authenticator = getAuthenticator(context);
   const user = await authenticator.isAuthenticated(request, {
     failureRedirect: "/",
   }) as { id: string };
+
+  const supabase = getSupabaseClient(context);
   const { data: surveys, error } = await supabase
     .from('surveys')
     .select('id, title')

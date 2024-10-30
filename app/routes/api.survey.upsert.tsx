@@ -1,10 +1,11 @@
 import { ActionFunction, json } from "@remix-run/cloudflare";
-import { authenticator } from "~/utils/auth.server";
-import { supabase } from "~/utils/supabase.server";
+import { getAuthenticator } from "~/utils/auth.server";
+import { getSupabaseClient } from "~/utils/supabase.server";
 
 type User = { id: string };
 
-export const action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction = async ({ request, context }) => {
+  const authenticator = getAuthenticator(context);
   const user = await authenticator.isAuthenticated(request, {
     failureRedirect: "/login",
   }) as User;
@@ -12,6 +13,7 @@ export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const surveyData = JSON.parse(formData.get("survey") as string);
 
+  const supabase = getSupabaseClient(context);
   let result;
   if (surveyData.id) {
     // Update existing survey
@@ -65,11 +67,13 @@ export const action: ActionFunction = async ({ request }) => {
 
     // Insert categories and questions
     for (const category of surveyData.categories) {
-      const { data: categoryData } = await supabase
+      const { data: categoryData, error: categoryError } = await supabase
         .from('categories')
         .insert({ title: category.title, survey_id: result.id })
         .select()
         .single();
+
+      if (!categoryData || categoryError) throw new Error(categoryError?.message || 'Failed to create category');
 
       for (const question of category.questions) {
         await supabase

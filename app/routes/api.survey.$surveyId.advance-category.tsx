@@ -1,16 +1,20 @@
 import { ActionFunction, json } from "@remix-run/cloudflare";
-import { authenticator } from "~/utils/auth.server";
-import { supabase } from "~/utils/supabase.server";
+import { getAuthenticator } from "~/utils/auth.server";
+import { getSupabaseClient } from "~/utils/supabase.server";
 
-export const action: ActionFunction = async ({ request, params }) => {
+export const action: ActionFunction = async ({ request, params, context }) => {
+  const authenticator = getAuthenticator(context);
   const user = await authenticator.isAuthenticated(request, {
     failureRedirect: "/login",
   }) as { id: string };
 
   const { surveyId } = params;
+  if (!surveyId) throw new Error("Survey ID is required");
+
   const formData = await request.formData();
   const categoryId = formData.get("categoryId");
 
+  const supabase = getSupabaseClient(context);
   const { data: survey, error: surveyError } = await supabase
     .from('surveys')
     .select('user_id')

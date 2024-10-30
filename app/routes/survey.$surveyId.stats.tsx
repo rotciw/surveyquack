@@ -1,7 +1,7 @@
 import { useLoaderData } from "@remix-run/react";
 import { json, LoaderFunction } from "@remix-run/cloudflare";
-import { authenticator } from "~/utils/auth.server";
-import { supabase } from "~/utils/supabase.server";
+import { getAuthenticator } from "~/utils/auth.server";
+import { getSupabaseClient } from "~/utils/supabase.server";
 import { SurveyStats } from "~/components/SurveyStats";
 import { Survey, SurveyResponse } from "~/models/survey";
 
@@ -15,13 +15,15 @@ type LoaderData = {
   responses: SurveyResponse[]
 };
 
-export const loader: LoaderFunction = async ({ request, params }) => {
-  const user = await authenticator.isAuthenticated(request, {
+export const loader: LoaderFunction = async ({ request, params, context }) => {
+  const user = await getAuthenticator(context).isAuthenticated(request, {
     failureRedirect: "/login",
   }) as AuthUser;
 
+  const supabase = getSupabaseClient(context);
   const { surveyId } = params;
 
+  if (!surveyId) throw new Error("Survey ID is required");
   // Fetch survey data
   const { data: survey, error: surveyError } = await supabase
     .from('surveys')
@@ -43,7 +45,15 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       title,
       questions (id, title, type, options, scale_start, scale_end, scale_left_label, scale_right_label)
     `)
-    .eq('survey_id', surveyId);
+    .eq('survey_id', surveyId)
+    .returns<Array<{
+      id: string;
+      title: string;
+      questions: Array<{
+        id: string;
+        title: string;
+      }>;
+    }>>();
 
   if (categoriesError) throw new Error(categoriesError.message);
 
@@ -51,12 +61,13 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   const { data: responses } = await supabase
     .from('survey_responses')
     .select('question_id, answer_value, taker_id')
-    .eq('survey_id', surveyId);
+    .eq('survey_id', surveyId)
+    .returns<SurveyResponse[]>();
 
-  const fullSurvey = {
+  const fullSurvey: Survey = {
     ...survey,
-    categories: categories || []
-  };
+    categories: categories || [],
+  } as Survey;
 
   return json<LoaderData>({ survey: fullSurvey, responses: responses || [] });
 };

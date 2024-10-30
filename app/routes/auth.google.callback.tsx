@@ -1,17 +1,22 @@
 import { LoaderFunction, redirect } from "@remix-run/cloudflare";
-import { authenticator } from "~/utils/auth.server";
-import { commitSession, getSession } from "~/utils/session.server";
+import { getAuthenticator } from "~/utils/auth.server";
+import { getSession, commitSession } from "~/utils/session.server";
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: LoaderFunction = async ({ request, context }) => {
   try {
+    const authenticator = getAuthenticator(context);
     const user = await authenticator.authenticate("google", request, {
       failureRedirect: "/",
     });
-    const session = await getSession(request.headers.get("Cookie"));
+    
+    const session = await getSession(context, request.headers.get("Cookie"));
     session.set("user", user);
+    
     return redirect("/dashboard", {
       headers: {
-        "Set-Cookie": await commitSession(session),
+        "Set-Cookie": await commitSession(context, session, {
+          maxAge: 60 * 60 * 24 * 30 // 30 days
+        }),
       },
     });
   } catch (error) {

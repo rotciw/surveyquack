@@ -1,11 +1,12 @@
 import { ActionFunction, json } from "@remix-run/cloudflare";
-import { supabase } from "~/utils/supabase.server";
+import { getSupabaseClient } from "~/utils/supabase.server";
 
-export const action: ActionFunction = async ({ request, params }) => {
+export const action: ActionFunction = async ({ request, params, context }) => {
   const { surveyId } = params;
   const formData = await request.formData();
   const answers = JSON.parse(formData.get("answers") as string);
-  
+  const supabase = getSupabaseClient(context);
+    
   const { error } = await supabase
     .from('survey_responses')
     .upsert({

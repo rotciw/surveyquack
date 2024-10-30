@@ -2,8 +2,8 @@ import { json, LoaderFunction } from "@remix-run/cloudflare";
 import { useLoaderData } from "@remix-run/react";
 import { SurveyCreator } from "~/components/SurveyCreator";
 import { Survey } from "~/models/survey";
-import { authenticator } from "~/utils/auth.server";
-import { supabase } from "~/utils/supabase.server";
+import { getAuthenticator } from "~/utils/auth.server";
+import { getSupabaseClient } from "~/utils/supabase.server";
 
 interface User {
   id: string;
@@ -14,13 +14,15 @@ interface LoaderData {
   survey: Survey
 }
 
-export const loader: LoaderFunction = async ({ request, params }) => {
-  const user = await authenticator.isAuthenticated(request, {
+export const loader: LoaderFunction = async ({ request, params, context }) => {
+  const user = await getAuthenticator(context).isAuthenticated(request, {
     failureRedirect: "/",
   }) as User;
 
   const { surveyId } = params;
 
+  if (!surveyId) throw new Error("Survey ID is required");
+  const supabase = getSupabaseClient(context);
   // Fetch survey data
   const { data: survey, error: surveyError } = await supabase
     .from('surveys')
