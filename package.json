@@ -8,7 +8,7 @@
     "deploy": "wrangler pages deploy ./build",
     "dev": "remix vite:dev",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
-    "start": "wrangler pages dev ./build/client",
+    "start": "wrangler pages dev ./build/client --port 8789",
     "typecheck": "tsc",
     "typegen": "wrangler types"
   },

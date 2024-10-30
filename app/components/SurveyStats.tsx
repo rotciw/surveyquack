@@ -1,14 +1,41 @@
 import { useMemo } from "react";
-import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-import { Bar, Pie } from 'react-chartjs-2';
 import type { Survey, Question } from "~/models/survey";
-
-ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+import ClientOnly from "./ClientOnly";
 
 interface Response {
   question_id: string;
   answer_value: string;
   taker_id: string;
+}
+
+// Separate chart component to handle client-side only chart rendering
+function ChartComponent({ 
+  type, 
+  data, 
+  options 
+}: { 
+  type: 'pie' | 'bar', 
+  data: any, 
+  options?: any 
+}) {
+  return (
+    <ClientOnly>
+      {() => {
+        // Dynamically import Chart.js components
+        const { Chart: ChartJS, ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } = require('chart.js');
+        const { Pie, Bar } = require('react-chartjs-2');
+
+        // Register Chart.js components
+        ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+        return type === 'pie' ? (
+          <Pie data={data} options={{ maintainAspectRatio: false, ...options }} />
+        ) : (
+          <Bar data={data} options={{ maintainAspectRatio: false, ...options }} />
+        );
+      }}
+    </ClientOnly>
+  );
 }
 
 export function SurveyStats({ survey, responses }: { survey: Survey, responses: Response[] }) {
@@ -25,7 +52,7 @@ export function SurveyStats({ survey, responses }: { survey: Survey, responses: 
       });
 
       return {
-        type: 'pie',
+        type: 'pie' as const,
         data: {
           labels: Object.keys(optionCounts),
           datasets: [{
@@ -48,7 +75,7 @@ export function SurveyStats({ survey, responses }: { survey: Survey, responses: 
       }
 
       return {
-        type: 'bar',
+        type: 'bar' as const,
         data: {
           labels: Object.keys(counts),
           datasets: [{
@@ -95,11 +122,7 @@ export function SurveyStats({ survey, responses }: { survey: Survey, responses: 
                     Total responses: {questionResponses.length}
                   </p>
                   <div className="h-64">
-                    {stats.type === 'pie' ? (
-                      <Pie data={stats.data} options={{ maintainAspectRatio: false }} />
-                    ) : (
-                      <Bar data={stats.data} options={{ ...stats.options, maintainAspectRatio: false }} />
-                    )}
+                    <ChartComponent type={stats.type} data={stats.data} options={stats.options} />
                   </div>
                 </div>
               );

@@ -1,9 +1,10 @@
-import { data, json, LoaderFunction } from "@remix-run/cloudflare";
-import { useLoaderData } from "@remix-run/react";
-import { getSupabaseClient } from "~/utils/supabase.server";
-import { Dashboard } from "~/components/Dashboard";
-import { getAuthenticator } from "~/utils/auth.server";
-import { Survey } from "~/models/survey";
+import type { LoaderFunction } from '@remix-run/cloudflare';
+import { json } from '@remix-run/cloudflare';
+import { useLoaderData } from '@remix-run/react';
+import { Dashboard } from '~/components/Dashboard';
+import { Survey } from '~/models/survey';
+import { getAuthenticator } from '~/utils/auth.server';
+import { getSupabaseClient } from '~/utils/supabase.server';
 
 export const loader: LoaderFunction = async ({ request, context }) => {
   const authenticator = getAuthenticator(context);
@@ -29,4 +30,4 @@ type LoaderData = {
 export default function DashboardPage() {
   const { surveys } = useLoaderData<LoaderData>();
   return <Dashboard surveys={surveys} />;
-}
+} 

@@ -2,14 +2,15 @@ import { Authenticator } from "remix-auth";
 import { GoogleStrategy } from "remix-auth-google";
 import { getSessionStorage } from "./session.server";
 import type { AppLoadContext } from "@remix-run/cloudflare";
+import { getEnv } from "./env.server";
 
 export function getAuthenticator(context: AppLoadContext) {
   const authenticator = new Authenticator(getSessionStorage(context));
-
+  const env = getEnv(context);
   const googleStrategy = new GoogleStrategy(
     {
-      clientID: (context.env as any).GOOGLE_CLIENT_ID,
-      clientSecret: (context.env as any).GOOGLE_CLIENT_SECRET,
+      clientID: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
       callbackURL: "/auth/google/callback",
     },
     async ({ profile }) => {

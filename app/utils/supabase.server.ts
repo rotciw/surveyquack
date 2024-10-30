@@ -1,21 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
-import type { AppLoadContext } from '@remix-run/cloudflare';
+import { getEnv } from './env.server';
 
-let supabase: ReturnType<typeof createClient>;
+let _supabaseClient: ReturnType<typeof createClient> | null = null;
 
-export function getSupabaseClient(context: AppLoadContext) {
-  const env = context.env || context.cloudflare?.env;
+export function getSupabaseClient(context: any) {
+  if (_supabaseClient) return _supabaseClient;
+
+  const env = getEnv(context);
   
   if (!env?.SUPABASE_URL || !env?.SUPABASE_ANON_KEY) {
-    console.error('Initializing Supabase client with context:', {
-      hasEnv: !!context.env,
-      hasSupabaseUrl: !!env?.SUPABASE_URL,
-      hasSupabaseKey: !!env?.SUPABASE_ANON_KEY
-    });
+    console.error('Missing Supabase configuration');
     throw new Error('Missing Supabase configuration');
   }
 
-  return createClient(
+  _supabaseClient = createClient(
     env.SUPABASE_URL,
     env.SUPABASE_ANON_KEY,
     {
@@ -24,4 +22,6 @@ export function getSupabaseClient(context: AppLoadContext) {
       }
     }
   );
+
+  return _supabaseClient;
 }

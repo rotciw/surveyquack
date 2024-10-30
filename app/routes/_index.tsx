@@ -1,4 +1,4 @@
-import { Link, Form, useLoaderData } from "@remix-run/react";
+import { Link, Form, useLoaderData, useRouteError } from "@remix-run/react";
 import { json, LoaderFunction } from "@remix-run/cloudflare";
 import { getSession } from "~/utils/session.server";
 import { useState } from "react";
@@ -100,6 +100,22 @@ export default function Index() {
           </Link>
         </div>
       )}
+    </div>
+  );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  console.error('Index route error:', {
+    error,
+    message: error instanceof Error ? error.message : 'Unknown error',
+    stack: error instanceof Error ? error.stack : undefined
+  });
+
+  return (
+    <div className="error-container">
+      <h1>Error</h1>
+      <pre>{error instanceof Error ? error.stack : JSON.stringify(error, null, 2)}</pre>
     </div>
   );
 }
