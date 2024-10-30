@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type { Survey, Question } from "~/models/survey";
 import ClientOnly from "./ClientOnly";
 
@@ -9,33 +9,75 @@ interface Response {
 }
 
 // Separate chart component to handle client-side only chart rendering
-function ChartComponent({ 
-  type, 
-  data, 
-  options 
-}: { 
-  type: 'pie' | 'bar', 
-  data: any, 
-  options?: any 
-}) {
+function ChartComponent({ type, data, options }: { type: 'pie' | 'bar', data: any, options?: any }) {
+  const [Chart, setChart] = useState<JSX.Element | null>(null);
+  
+  useEffect(() => {
+    const loadChart = async () => {
+      const chartJs = await import('chart.js');
+      const reactChartJs = await import('react-chartjs-2');
+      
+      const { Chart: ChartJS, ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } = chartJs;
+      const { Pie, Bar } = reactChartJs;
+
+      ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+      setChart(type === 'pie' ? (
+        <Pie data={data} options={{ maintainAspectRatio: false, ...options }} />
+      ) : (
+        <Bar data={data} options={{ maintainAspectRatio: false, ...options }} />
+      ));
+    };
+    
+    loadChart();
+  }, [type, data, options]);
+
   return (
     <ClientOnly>
-      {() => {
-        // Dynamically import Chart.js components
-        const { Chart: ChartJS, ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } = require('chart.js');
-        const { Pie, Bar } = require('react-chartjs-2');
-
-        // Register Chart.js components
-        ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
-
-        return type === 'pie' ? (
-          <Pie data={data} options={{ maintainAspectRatio: false, ...options }} />
-        ) : (
-          <Bar data={data} options={{ maintainAspectRatio: false, ...options }} />
-        );
-      }}
+      {() => Chart}
     </ClientOnly>
   );
+}
+
+// Add this helper function to generate colors
+function generateColors(count: number) {
+  const colors = [
+    '#FF6384', // pink
+    '#36A2EB', // blue
+    '#FFCE56', // yellow
+    '#4BC0C0', // teal
+    '#9966FF', // purple
+    '#FF9F40', // orange
+    '#7CBA3B', // green
+    '#EC932F', // dark orange
+    '#71B37C', // sage green
+    '#B2912F'  // brown
+  ];
+  
+  return Array(count).fill(0).map((_, i) => colors[i % colors.length]);
+}
+
+// Helper function to transform the data
+function transformLinearScaleData(data: Record<string, number>) {
+  const labels = Object.keys(data);
+  const colors = [
+    '#FF6384', // pink
+    '#36A2EB', // blue
+    '#FFCE56', // yellow
+    '#4BC0C0', // teal
+    '#9966FF', // purple
+  ];
+
+  return {
+    labels: ['Responses'],
+    datasets: labels.map((label, index) => ({
+      label: label,
+      data: [data[label]],
+      backgroundColor: colors[index % colors.length],
+      borderColor: colors[index % colors.length],
+      borderWidth: 1
+    }))
+  };
 }
 
 export function SurveyStats({ survey, responses }: { survey: Survey, responses: Response[] }) {
@@ -74,16 +116,11 @@ export function SurveyStats({ survey, responses }: { survey: Survey, responses: 
         counts[i] = values.filter(v => v === i).length;
       }
 
+      const chartData = transformLinearScaleData(counts);
+
       return {
         type: 'bar' as const,
-        data: {
-          labels: Object.keys(counts),
-          datasets: [{
-            label: 'Responses',
-            data: Object.values(counts),
-            backgroundColor: '#36A2EB',
-          }],
-        },
+        data: chartData,
         options: {
           scales: {
             y: {
