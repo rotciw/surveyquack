@@ -6,6 +6,8 @@ import {
   Scripts,
   ScrollRestoration,
   Link,
+  isRouteErrorResponse,
+  useRouteError,
 } from "@remix-run/react";
 
 import "./tailwind.css";
@@ -44,4 +46,35 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return <Outlet />;
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  console.error('Root error boundary caught:', error);
+
+  if (isRouteErrorResponse(error)) {
+    return (
+      <html>
+        <head>
+          <title>Error {error.status}</title>
+        </head>
+        <body>
+          <h1>Error {error.status}</h1>
+          <p>{error.data}</p>
+        </body>
+      </html>
+    );
+  }
+
+  return (
+    <html>
+      <head>
+        <title>Unknown Error</title>
+      </head>
+      <body>
+        <h1>Unknown Error</h1>
+        <p>{error instanceof Error ? error.message : "Unknown error occurred"}</p>
+      </body>
+    </html>
+  );
 }

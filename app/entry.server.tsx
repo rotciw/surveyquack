@@ -16,52 +16,71 @@ export default async function handleRequest(
   responseStatusCode: number,
   responseHeaders: Headers,
   remixContext: EntryContext,
-  // This is ignored so we can keep it in the template for visibility.  Feel
-  // free to delete this parameter in your app if you're not using it!
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   loadContext: AppLoadContext
 ) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), ABORT_DELAY);
-
-  const body = await renderToReadableStream(
-    <RemixServer
-      context={remixContext}
-      url={request.url}
-      abortDelay={ABORT_DELAY}
-    />,
-    {
-      signal: controller.signal,
-      onError(error: unknown) {
-        if (!controller.signal.aborted) {
-          // Log streaming rendering errors from inside the shell
-          console.error(error);
-        }
-        responseStatusCode = 500;
-      },
+  try {
+    if (!loadContext.env) {
+      console.error('LoadContext env is missing:', loadContext);
+      throw new Error('Missing environment configuration');
     }
-  );
 
-  body.allReady.then(() => clearTimeout(timeoutId));
+    if (!loadContext.cloudflare?.env) {
+      console.error('Cloudflare env is missing:', loadContext.cloudflare);
+      throw new Error('Missing Cloudflare environment configuration');
+    }
 
-  if (isbot(request.headers.get("user-agent") || "")) {
-    await body.allReady;
+    // Log environment variables (be careful with sensitive data in production)
+    console.log('Environment check:', {
+      hasSupabaseUrl: !!loadContext.cloudflare.env.SUPABASE_URL,
+      hasSupabaseKey: !!loadContext.cloudflare.env.SUPABASE_ANON_KEY,
+      hasSessionSecret: !!loadContext.cloudflare.env.SESSION_SECRET,
+    });
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), ABORT_DELAY);
+
+    const body = await renderToReadableStream(
+      <RemixServer
+        context={remixContext}
+        url={request.url}
+        abortDelay={ABORT_DELAY}
+      />,
+      {
+        signal: controller.signal,
+        onError(error: unknown) {
+          if (!controller.signal.aborted) {
+            // Log streaming rendering errors from inside the shell
+            console.error(error);
+          }
+          responseStatusCode = 500;
+        },
+      }
+    );
+
+    body.allReady.then(() => clearTimeout(timeoutId));
+
+    if (isbot(request.headers.get("user-agent") || "")) {
+      await body.allReady;
+    }
+
+    responseHeaders.set("Content-Type", "text/html");
+
+    if (!loadContext.env) {
+      loadContext.env = {
+        SUPABASE_URL: loadContext.cloudflare.env.SUPABASE_URL,
+        SUPABASE_ANON_KEY: loadContext.cloudflare.env.SUPABASE_ANON_KEY,
+        SESSION_SECRET: loadContext.cloudflare.env.SESSION_SECRET,
+        GOOGLE_CLIENT_ID: loadContext.cloudflare.env.GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET: loadContext.cloudflare.env.GOOGLE_CLIENT_SECRET
+      };
+    }
+
+    return new Response(body, {
+      headers: responseHeaders,
+      status: responseStatusCode,
+    });
+  } catch (error) {
+    console.error('Critical error in handleRequest:', error);
+    return new Response('Internal Server Error', { status: 500 });
   }
-
-  responseHeaders.set("Content-Type", "text/html");
-
-  if (!loadContext.env) {
-    loadContext.env = {
-      SUPABASE_URL: loadContext.cloudflare.env.SUPABASE_URL,
-      SUPABASE_ANON_KEY: loadContext.cloudflare.env.SUPABASE_ANON_KEY,
-      SESSION_SECRET: loadContext.cloudflare.env.SESSION_SECRET,
-      GOOGLE_CLIENT_ID: loadContext.cloudflare.env.GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET: loadContext.cloudflare.env.GOOGLE_CLIENT_SECRET
-    };
-  }
-
-  return new Response(body, {
-    headers: responseHeaders,
-    status: responseStatusCode,
-  });
 }
