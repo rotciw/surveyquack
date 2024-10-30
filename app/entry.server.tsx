@@ -66,13 +66,7 @@ export default async function handleRequest(
     responseHeaders.set("Content-Type", "text/html");
 
     if (!loadContext.env) {
-      loadContext.env = {
-        SUPABASE_URL: loadContext.cloudflare.env.SUPABASE_URL,
-        SUPABASE_ANON_KEY: loadContext.cloudflare.env.SUPABASE_ANON_KEY,
-        SESSION_SECRET: loadContext.cloudflare.env.SESSION_SECRET,
-        GOOGLE_CLIENT_ID: loadContext.cloudflare.env.GOOGLE_CLIENT_ID,
-        GOOGLE_CLIENT_SECRET: loadContext.cloudflare.env.GOOGLE_CLIENT_SECRET
-      };
+      loadContext.env = loadContext.cloudflare.env;
     }
 
     return new Response(body, {

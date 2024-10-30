@@ -8,7 +8,7 @@ export function getSessionStorage(context: AppLoadContext) {
       sameSite: "lax",
       path: "/",
       httpOnly: true,
-      secrets: [(context.env as any).SESSION_SECRET],
+      secrets: [context.env.SESSION_SECRET],
       secure: true,
     },
   });
