@@ -3,11 +3,36 @@ import { useFetcher } from "@remix-run/react";
 import type { Survey, Answer } from "~/models/survey";
 import { Toast } from "./Toast";
 
-export function SurveyTaker({ survey }: { survey: Survey }) {
+export function SurveyTaker({ survey: initialSurvey }: { survey: Survey }) {
+  const [survey, setSurvey] = useState(initialSurvey);
   const fetcher = useFetcher();
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | undefined>(survey.active_category);
   const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | null>(null);
+
+  useEffect(() => {
+    const eventSource = new EventSource(`/api/survey/${survey.id}/status`);
+    
+    eventSource.onmessage = (event) => {
+      if (event.data !== ": keepalive") {
+        const newStatus = JSON.parse(event.data);
+        setSurvey(prev => ({ ...prev, status: newStatus }));
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('EventSource error:', error);
+      eventSource.close();
+      setTimeout(() => {
+        eventSource.close();
+        new EventSource(`/api/survey/${survey.id}/status`);
+      }, 1000);
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [survey.id]);
 
   useEffect(() => {
     const eventSource = new EventSource(`/api/survey/${survey.id}/category`);

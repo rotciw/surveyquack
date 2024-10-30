@@ -1,17 +1,15 @@
 import type { LinksFunction, LoaderFunction } from "@remix-run/cloudflare";
+import { json } from "@remix-run/cloudflare";
 import {
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
-  isRouteErrorResponse,
-  useRouteError,
-  useLocation,
-  useLoaderData
+  useLoaderData,
+  useLocation
 } from "@remix-run/react";
 import { Header } from "~/components/Header";
-import { json } from "@remix-run/cloudflare";
 import { getSession } from "~/utils/session.server";
 
 import "./tailwind.css";

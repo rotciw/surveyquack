@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
 import { Link, useFetcher } from "@remix-run/react";
-import { Survey, Category, Question } from "~/models/survey";
-import { ActiveCategoryCard } from "./ActiveCategoryCard";
+import React, { useEffect, useState } from "react";
+import { Category, Question, Survey } from "~/models/survey";
 import { Toast } from "./Toast";
 
 export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: { user: { id: string }; surveyId?: string; initialSurvey: Survey; initialUrl?: string }) {
@@ -24,6 +23,29 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: { u
       setUniqueUrl(fetcher.data.url);
     }
   }, [fetcher.data]);
+
+  useEffect(() => {
+    if (!surveyId) return;
+    
+    const eventSource = new EventSource(`/api/survey/${surveyId}/status`);
+    
+    eventSource.onmessage = (event) => {
+      if (event.data !== ": keepalive") {
+        const newStatus = JSON.parse(event.data);
+        setSurvey(prev => ({ ...prev, status: newStatus }));
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('EventSource error:', error);
+      eventSource.close();
+      setTimeout(() => {
+        new EventSource(`/api/survey/${surveyId}/status`);
+      }, 1000);
+    };
+
+    return () => eventSource.close();
+  }, [surveyId]);
 
   const updateSurveyTitle = (title: string) => {
     setSurvey({ ...survey, title });
@@ -211,16 +233,13 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: { u
     setSurvey({ ...survey, categories: newCategories });
   };
 
-  const handleCategoryChange = async (categoryId: string) => {
-    const updatedSurvey = { ...survey, activeCategory: categoryId };
-    setSurvey(updatedSurvey);
-  };
-
   const toggleSurveyStatus = () => {
     const newStatus = survey.status === 'open' ? 'closed' : 'open';
+    setSurvey(prev => ({ ...prev, status: newStatus }));
+    
     fetcher.submit(
       { status: newStatus },
-      { method: "post", action: `/api/survey/${survey.id}/toggle-status` }
+      { method: "post", action: `/api/survey/${surveyId}/toggle-status` }
     );
   };
   
@@ -278,11 +297,6 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: { u
           </div>
         </div>
       )}
-
-      <ActiveCategoryCard 
-        survey={survey} 
-        onCategoryChange={handleCategoryChange} 
-      />
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-4">
       
       <div className="flex justify-between items-center mb-6">

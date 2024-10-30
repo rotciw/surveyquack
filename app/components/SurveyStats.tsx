@@ -1,6 +1,8 @@
 import { useMemo, useState, useEffect } from "react";
 import type { Survey, Question } from "~/models/survey";
+import { ActiveCategoryCard } from "./ActiveCategoryCard";
 import ClientOnly from "./ClientOnly";
+import { useFetcher } from "@remix-run/react";
 
 interface Response {
   question_id: string;
@@ -80,11 +82,28 @@ function transformLinearScaleData(data: Record<string, number>) {
   };
 }
 
-export function SurveyStats({ survey, responses }: { survey: Survey, responses: Response[] }) {
+export function SurveyStats({ survey: initialSurvey, responses }: { survey: Survey; responses: Response[] }) {
+  const [survey, setSurvey] = useState(initialSurvey);
+  const fetcher = useFetcher();
+  
   const uniqueRespondents = useMemo(() => 
     new Set(responses.map(r => r.taker_id)).size, 
     [responses]
   );
+
+  const handleCategoryChange = async (categoryId: string) => {
+    // Update local state
+    setSurvey(prev => ({ ...prev, active_category: categoryId }));
+    
+    // Make API call to update the active category
+    fetcher.submit(
+      { categoryId },
+      { 
+        method: "post", 
+        action: `/api/survey/${survey.id}/activate-category`
+      }
+    );
+  };
 
   const getQuestionStats = (question: Question, questionResponses: Response[]) => {
     if (question.type === 'multiple_choice') {
@@ -138,10 +157,19 @@ export function SurveyStats({ survey, responses }: { survey: Survey, responses: 
 
   return (
     <div className="max-w-4xl mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-8">{survey.title} - Statistics</h1>
+      <h1 className="text-3xl font-bold mb-8">{survey.title} - Management & Statistics</h1>
+      
+      <div className="mb-8">
+        <ActiveCategoryCard 
+          survey={survey} 
+          onCategoryChange={handleCategoryChange}
+        />
+      </div>
+
       <div className="mb-8 bg-blue-50 p-4 rounded-lg">
         <p className="text-lg">Total unique respondents: {uniqueRespondents}</p>
       </div>
+
       {survey.categories.map(category => (
         <div key={category.id} className="mb-12 bg-white p-6 rounded-lg shadow">
           <h2 className="text-2xl font-semibold mb-6">{category.title}</h2>
