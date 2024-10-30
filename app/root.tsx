@@ -1,4 +1,4 @@
-import type { LinksFunction } from "@remix-run/cloudflare";
+import type { LinksFunction, LoaderFunction } from "@remix-run/cloudflare";
 import {
   Links,
   Meta,
@@ -6,10 +6,19 @@ import {
   Scripts,
   ScrollRestoration,
   isRouteErrorResponse,
-  useRouteError
+  useRouteError,
+  useLocation,
+  useLoaderData
 } from "@remix-run/react";
+import { Header } from "~/components/Header";
+import { json } from "@remix-run/cloudflare";
+import { getSession } from "~/utils/session.server";
 
 import "./tailwind.css";
+
+type LoaderData = {
+  user: { id: string } | null;
+};
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -25,7 +34,20 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" },
 ];
 
+export const loader: LoaderFunction = async ({ request, context }) => {
+  const session = await getSession(context, request.headers.get("Cookie"));
+  const user = session.get("user");
+  return json<LoaderData>({ user });
+};
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const { user } = useLoaderData<LoaderData>();
+  
+  const isSurveyTaker = location.pathname.includes('/survey/') && 
+                        !location.pathname.includes('/stats') && 
+                        !location.pathname.includes('/manage');
+
   return (
     <html lang="en">
       <head>
@@ -35,6 +57,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
+        {!isSurveyTaker && <Header user={user || undefined} />}
         {children}
         <ScrollRestoration />
         <Scripts />
