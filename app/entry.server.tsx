@@ -19,6 +19,10 @@ export default async function handleRequest(
   loadContext: AppLoadContext
 ) {
   try {
+    if (!loadContext.env && loadContext.cloudflare?.env) {
+      loadContext.env = loadContext.cloudflare.env;
+    }
+
     if (!loadContext.env) {
       console.error('LoadContext env is missing:', loadContext);
       throw new Error('Missing environment configuration');

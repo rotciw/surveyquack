@@ -2,8 +2,13 @@ import { createCookieSessionStorage } from "@remix-run/cloudflare";
 import type { AppLoadContext } from "@remix-run/cloudflare";
 
 export function getSessionStorage(context: AppLoadContext) {
-  if (!context?.env?.SESSION_SECRET) {
-    console.error('Session configuration error:', { context, env: context?.env });
+  const sessionSecret = context.env?.SESSION_SECRET || context.cloudflare?.env?.SESSION_SECRET;
+  
+  if (!sessionSecret) {
+    console.error('Session configuration error:', { 
+      hasEnv: !!context.env,
+      hasCloudflareEnv: !!context.cloudflare?.env,
+    });
     throw new Error('SESSION_SECRET is required');
   }
 
@@ -13,7 +18,7 @@ export function getSessionStorage(context: AppLoadContext) {
       sameSite: "lax",
       path: "/",
       httpOnly: true,
-      secrets: [context.env.SESSION_SECRET],
+      secrets: [sessionSecret],
       secure: true,
     },
   });
