@@ -1,5 +1,6 @@
 import { Survey, Category } from "~/models/survey";
 import { useFetcher } from "@remix-run/react";
+import { useState, useEffect } from "react";
 
 interface ActiveCategoryCardProps {
   survey: Survey;
@@ -8,12 +9,16 @@ interface ActiveCategoryCardProps {
 
 export function ActiveCategoryCard({ survey, onCategoryChange }: ActiveCategoryCardProps) {
   const fetcher = useFetcher();
-  console.log(survey);
+  const [activeCategory, setActiveCategory] = useState(survey.active_category);
+
+  useEffect(() => {
+    setActiveCategory(survey.active_category);
+  }, [survey.active_category]);
+
   const handleCategoryChange = (categoryId: string) => {
-    console.log(categoryId)
+    setActiveCategory(categoryId);
     onCategoryChange(categoryId);
     
-    // Update active category through API
     fetcher.submit(
       { categoryId },
       { 
@@ -25,7 +30,7 @@ export function ActiveCategoryCard({ survey, onCategoryChange }: ActiveCategoryC
 
   return (
     <div className="bg-white shadow-lg rounded-lg p-4 mb-4">
-      <h3 className="text-lg font-semibold mb-3">Active Category</h3>
+      <h2 className="text-lg font-semibold mb-3">Active Category</h2>
       <div className="space-y-2">
         {survey.categories.map((category: Category) => (
           <label
@@ -36,7 +41,7 @@ export function ActiveCategoryCard({ survey, onCategoryChange }: ActiveCategoryC
               type="radio"
               name="activeCategory"
               value={category.id}
-              checked={category.id === survey.active_category}
+              checked={category.id === activeCategory}
               onChange={() => handleCategoryChange(category.id)}
               className="text-indigo-600"
             />
