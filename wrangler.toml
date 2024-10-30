@@ -1,13 +1,5 @@
 name = "presentation-survey"
 pages_build_output_dir = "./build/client"
 
-[vars]
-SUPABASE_URL = ""
-SUPABASE_ANON_KEY = ""
-SESSION_SECRET = ""
-GOOGLE_CLIENT_ID = ""
-GOOGLE_CLIENT_SECRET = ""
-
-
 # Fixes "compatibility_flags cannot be specified without a compatibility_date"
 compatibility_date = "2024-10-30"
