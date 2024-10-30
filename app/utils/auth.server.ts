@@ -6,8 +6,8 @@ export const authenticator = new Authenticator(sessionStorage);
 
 const googleStrategy = new GoogleStrategy(
   {
-    clientID: process.env.GOOGLE_CLIENT_ID as string,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    clientID: ENV.GOOGLE_CLIENT_ID as string,
+    clientSecret: ENV.GOOGLE_CLIENT_SECRET as string,
     callbackURL: "http://localhost:5173/auth/google/callback",
   },
   async ({ accessToken, refreshToken, extraParams, profile }) => {
