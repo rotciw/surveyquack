@@ -1,13 +1,23 @@
+import { useEffect } from "react";
+
 interface ToastProps {
   message: string;
-  type: 'info' | 'success';
+  type: 'success' | 'error' | 'info';
+  onClose?: () => void;
 }
 
-export function Toast({ message, type }: ToastProps) {
+export function Toast({ message, type, onClose }: ToastProps) {
   const bgColor = type === 'info' ? 'bg-blue-500' : 'bg-green-500';
+
+  useEffect(() => {
+    if (onClose) {
+      const timer = setTimeout(onClose, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [onClose]);
   
   return (
-    <div className={`${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2`}>
+    <div className={`${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 mt-4`}>
       {type === 'info' ? (
         <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />

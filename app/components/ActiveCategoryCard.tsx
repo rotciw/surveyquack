@@ -29,10 +29,10 @@ export function ActiveCategoryCard({ survey, onCategoryChange }: ActiveCategoryC
   };
 
   return (
-    <div className="bg-white shadow-lg rounded-lg p-4 mb-4">
-      <h2 className="text-lg font-semibold mb-3">Active Category</h2>
+    <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
+      <h2 className="text-lg font-semibold mb-3">Select Active Category</h2>
       <div className="space-y-2">
-        {survey.categories.map((category: Category) => (
+        {survey.categories?.map((category: Category) => (
           <label
             key={category.id}
             className="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded"

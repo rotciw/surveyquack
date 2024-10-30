@@ -5,6 +5,7 @@ export interface Survey {
   user_id: string;
   active_category?: string;
   status: 'draft' | 'open' | 'closed';
+  created_at: string;
 }
 
 export interface SurveyResponse {

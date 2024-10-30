@@ -11,7 +11,8 @@ interface User {
 }
 
 interface LoaderData {
-  survey: Survey
+  survey: Survey;
+  surveyUrl: string;
 }
 
 export const loader: LoaderFunction = async ({ request, params, context }) => {
@@ -56,13 +57,15 @@ export const loader: LoaderFunction = async ({ request, params, context }) => {
     ...survey,
     categories: categories || []
   };
-  console.log(fullSurvey);
 
-  return json({ survey: fullSurvey });
+  return json({ 
+    survey: fullSurvey,
+    surveyUrl: `${new URL(request.url).origin}/survey/${survey.id}/answer`
+  });
 };
 
 export default function ManageSurvey() {
-  const { survey } = useLoaderData<typeof loader>() as LoaderData;
+  const { survey, surveyUrl } = useLoaderData<typeof loader>() as LoaderData;
   
-  return <SurveyCreator user={{ id: survey.user_id }} surveyId={survey.id} initialSurvey={survey} />;
+  return <SurveyCreator user={{ id: survey.user_id }} surveyId={survey.id} initialSurvey={survey} initialUrl={surveyUrl} />;
 }

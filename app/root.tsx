@@ -41,13 +41,55 @@ export const loader: LoaderFunction = async ({ request, context }) => {
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const location = useLocation();
-  const { user } = useLoaderData<LoaderData>();
-  
-  const isSurveyTaker = location.pathname.includes('/survey/') && 
-                        !location.pathname.includes('/stats') && 
-                        !location.pathname.includes('/manage');
+  try {
+    const { user } = useLoaderData<LoaderData>();
+    const location = useLocation();
+    
+    const isSurveyTaker = location.pathname.includes('/survey/') && 
+                          !location.pathname.includes('/stats') && 
+                          !location.pathname.includes('/manage');
 
+    return (
+      <html lang="en">
+        <head>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <Meta />
+          <Links />
+        </head>
+        <body>
+          {!isSurveyTaker && <Header user={user || undefined} />}
+          {children}
+          <ScrollRestoration />
+          <Scripts />
+        </body>
+      </html>
+    );
+  } catch {
+    // Fallback layout for error cases
+    return (
+      <html lang="en">
+        <head>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <Meta />
+          <Links />
+        </head>
+        <body>
+          {children}
+          <ScrollRestoration />
+          <Scripts />
+        </body>
+      </html>
+    );
+  }
+}
+
+export default function App() {
+  return <Outlet />;
+}
+
+export function ErrorBoundary() {
   return (
     <html lang="en">
       <head>
@@ -57,62 +99,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {!isSurveyTaker && <Header user={user || undefined} />}
-        {children}
-        <ScrollRestoration />
-        <Scripts />
-      </body>
-    </html>
-  );
-}
-
-export default function App() {
-  return <Outlet />;
-}
-
-export function ErrorBoundary() {
-  const error = useRouteError();
-  console.error('Root error boundary:', {
-    error,
-    message: error instanceof Error ? error.message : 'Unknown error',
-    stack: error instanceof Error ? error.stack : undefined
-  });
-
-  if (isRouteErrorResponse(error)) {
-    return (
-      <html>
-        <head>
-          <title>Error {error.status}</title>
-          <Meta />
-          <Links />
-        </head>
-        <body>
-          <div className="error-container">
-            <h1>Error {error.status}</h1>
-            <pre>{JSON.stringify(error.data, null, 2)}</pre>
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-red-600">Oops! Something went wrong</h1>
+            <p className="mt-2 text-gray-600">Please try again later</p>
           </div>
-          <Scripts />
-        </body>
-      </html>
-    );
-  }
-
-  return (
-    <html>
-      <head>
-        <title>Application Error</title>
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        <div className="error-container">
-          <h1>Application Error</h1>
-          <pre>
-            {error instanceof Error 
-              ? `${error.message}\n\n${error.stack}`
-              : 'Unknown error occurred'}
-          </pre>
         </div>
+        <ScrollRestoration />
         <Scripts />
       </body>
     </html>

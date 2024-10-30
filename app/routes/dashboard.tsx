@@ -15,8 +15,9 @@ export const loader: LoaderFunction = async ({ request, context }) => {
   const supabase = getSupabaseClient(context);
   const { data: surveys, error } = await supabase
     .from('surveys')
-    .select('id, title')
-    .eq('user_id', user.id);
+    .select('id, title, status, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
     
   if (error) throw new Error(error.message);
 
