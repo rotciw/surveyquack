@@ -353,9 +353,9 @@ export function SurveyTaker({
         >
           <button
             onClick={handleSubmit}
-            className="w-full py-3 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="w-full py-3 px-4 bg-blue-500 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
-            Save & Submit Answers
+            Submit Answers
           </button>
         </motion.div>
       )}
