@@ -1,11 +1,10 @@
-import React from "react";
-import { useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/cloudflare";
 import { json } from "@remix-run/cloudflare";
+import { useLoaderData } from "@remix-run/react";
 import { SurveyTaker } from "~/components/SurveyTaker";
-import type { Survey, Answer, SurveyResponse } from "~/models/survey";
-import { getSupabaseClient } from "~/utils/supabase.server";
+import type { Answer } from "~/models/survey";
 import { getSession } from "~/utils/session.server";
+import { getSupabaseClient } from "~/utils/supabase.server";
 
 export const loader: LoaderFunction = async ({ params, context, request }) => {
     const supabase = getSupabaseClient(context);
@@ -61,8 +60,8 @@ export const loader: LoaderFunction = async ({ params, context, request }) => {
         console.error("Error fetching responses:", responsesError);
       } else if (surveyResponses && surveyResponses.length > 0) {
         existingAnswers = surveyResponses.map(response => ({
-          questionId: response.question_id,
-          value: response.answer_value
+          questionId: response.question_id as string,
+          value: response.answer_value as string
         }));
         isSubmitted = surveyResponses.some(response => response.status === 'submitted');
       }

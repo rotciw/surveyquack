@@ -5,6 +5,7 @@ import { getSession } from "~/utils/session.server";
 export const action: ActionFunction = async ({ request, params, context }) => {
   try {
     const { surveyId } = params;
+    if (!surveyId) throw new Error("Survey ID is required");
     const session = await getSession(context, request.headers.get("Cookie"));
     const takerId = session.get("takerId");
     
