@@ -3,27 +3,27 @@ import { useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/cloudflare";
 import { json } from "@remix-run/cloudflare";
 import { SurveyTaker } from "~/components/SurveyTaker";
-import type { Survey } from "~/models/survey";
+import type { Survey, Answer, SurveyResponse } from "~/models/survey";
 import { getSupabaseClient } from "~/utils/supabase.server";
+import { getSession } from "~/utils/session.server";
 
-export const loader: LoaderFunction = async ({ params, context }) => {
+export const loader: LoaderFunction = async ({ params, context, request }) => {
     const supabase = getSupabaseClient(context);
     const { surveyId } = params;
+    const session = await getSession(context, request.headers.get("Cookie"));
+    const takerId = session.get("takerId");
 
     if (!surveyId) throw new Error("Survey ID is required");
+
     const { data: survey, error: surveyError } = await supabase
       .from('surveys')
       .select('id, title, active_category, status')
       .eq('id', surveyId)
       .single();
 
-    if (surveyError) {
+    if (surveyError || !survey) {
       console.error("Error fetching survey:", surveyError);
       return json({ error: "Failed to load survey" }, { status: 500 });
-    }
-
-    if (!survey) {
-      return json({ error: "Survey not found" }, { status: 404 });
     }
 
     if (survey.status !== 'open') {
@@ -40,30 +40,47 @@ export const loader: LoaderFunction = async ({ params, context }) => {
       return json({ error: "Failed to load survey categories" }, { status: 500 });
     }
 
+    let existingAnswers: Answer[] = [];
+    let isSubmitted = false;
+
+    if (takerId) {
+      const { data: surveyResponses, error: responsesError } = await supabase
+        .from('survey_responses')
+        .select(`
+          question_id,
+          answer_value,
+          status,
+          survey_id,
+          taker_id,
+          updated_at
+        `)
+        .eq('survey_id', surveyId)
+        .eq('taker_id', takerId);
+
+      if (responsesError) {
+        console.error("Error fetching responses:", responsesError);
+      } else if (surveyResponses && surveyResponses.length > 0) {
+        existingAnswers = surveyResponses.map(response => ({
+          questionId: response.question_id,
+          value: response.answer_value
+        }));
+        isSubmitted = surveyResponses.some(response => response.status === 'submitted');
+      }
+    }
+
     const fullSurvey = {
       ...survey,
       categories: categories || []
     };
 
-    return json({ survey: fullSurvey });
+    return json({ 
+      survey: fullSurvey,
+      answers: existingAnswers,
+      isSubmitted
+    });
 };
 
-export default function SurveyPage() {
-  const { survey, error } = useLoaderData<{ survey?: Survey, error?: string }>();
-  const { surveyId } = useParams();
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  if (!survey) {
-    return <div>No survey found with ID: {surveyId}</div>;
-  }
-
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">{survey.title}</h1>
-      <SurveyTaker survey={survey} />
-    </div>
-  );
+export default function SurveyAnswerPage() {
+  const { survey, answers, isSubmitted } = useLoaderData<typeof loader>();
+  return <SurveyTaker survey={survey} answers={answers} isSubmitted={isSubmitted} />;
 }

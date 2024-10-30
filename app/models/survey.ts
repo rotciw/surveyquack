@@ -9,9 +9,14 @@ export interface Survey {
 }
 
 export interface SurveyResponse {
+  id: string;
+  survey_id: string;
   question_id: string;
-  answer_value: string;
   taker_id: string;
+  answer_value: string;
+  status: 'in_progress' | 'submitted';
+  updated_at: string;
+  created_at: string;
 }
 
 export interface Category {
@@ -35,4 +40,12 @@ export interface Question {
 export interface Answer {
   questionId: string;
   value: string;
+}
+
+// Helper type for grouping answers by taker
+export interface TakerAnswers {
+  taker_id: string;
+  answers: Answer[];
+  status: 'in_progress' | 'submitted';
+  updated_at: string;
 }

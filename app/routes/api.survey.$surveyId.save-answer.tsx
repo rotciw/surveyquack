@@ -2,12 +2,15 @@ import { ActionFunction, json } from "@remix-run/cloudflare";
 import { getSupabaseClient } from "~/utils/supabase.server";
 import { getSession, commitSession } from "~/utils/session.server";
 import { v4 as uuidv4 } from 'uuid';
+import type { Answer } from "~/models/survey";
 
 export const action: ActionFunction = async ({ request, params, context }) => {
   try {
     const { surveyId } = params;
+    if (!surveyId) throw new Error("Survey ID is required");
+
     const formData = await request.formData();
-    const answer = JSON.parse(formData.get("answer") as string);
+    const answer = JSON.parse(formData.get("answer") as string) as Answer;
     
     const session = await getSession(context, request.headers.get("Cookie"));
     let takerId = session.get("takerId");
@@ -15,9 +18,9 @@ export const action: ActionFunction = async ({ request, params, context }) => {
       takerId = uuidv4();
       session.set("takerId", takerId);
     }
+
     const supabase = getSupabaseClient(context);
 
-    // Use upsert with the correct column combination
     const { error } = await supabase
       .from('survey_responses')
       .upsert(
@@ -26,6 +29,7 @@ export const action: ActionFunction = async ({ request, params, context }) => {
           question_id: answer.questionId,
           taker_id: takerId,
           answer_value: answer.value,
+          status: 'in_progress',
           updated_at: new Date().toISOString()
         },
         {

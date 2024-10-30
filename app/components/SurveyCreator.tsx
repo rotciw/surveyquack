@@ -217,7 +217,10 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: { u
     setToast({ message: 'Saving survey...', type: 'info' });
     fetcher.submit(
       { survey: JSON.stringify(survey) },
-      { method: "post", action: "/api/survey/upsert" }
+      { 
+        method: "post", 
+        action: `/api/survey/${surveyId}/save`
+      }
     );
   };
   const updateScaleLabel = (categoryIndex: number, questionIndex: number, side: 'left' | 'right', value: string) => {
