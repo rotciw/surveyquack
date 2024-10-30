@@ -9,7 +9,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 
   const { surveyId } = params;
   const formData = await request.formData();
-  const categoryId = formData.get("categoryId");
+  const status = formData.get("status") as string;
 
   const { data: survey, error: surveyError } = await supabase
     .from('surveys')
@@ -18,17 +18,19 @@ export const action: ActionFunction = async ({ request, params }) => {
     .single();
 
   if (surveyError) throw new Error(surveyError.message);
-
   if (survey.user_id !== user.id) {
     throw new Response("Unauthorized", { status: 403 });
   }
 
   const { error } = await supabase
     .from('surveys')
-    .update({ active_category: categoryId })
+    .update({ status })
     .eq('id', surveyId);
 
   if (error) throw new Error(error.message);
-
-  return json({ success: true });
-};
+  
+  return json({ 
+    success: true,
+    status: status 
+  });
+}; 

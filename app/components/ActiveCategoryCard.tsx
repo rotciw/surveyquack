@@ -36,7 +36,7 @@ export function ActiveCategoryCard({ survey, onCategoryChange }: ActiveCategoryC
               type="radio"
               name="activeCategory"
               value={category.id}
-              checked={category.id === survey.activeCategory}
+              checked={category.id === survey.active_category}
               onChange={() => handleCategoryChange(category.id)}
               className="text-indigo-600"
             />

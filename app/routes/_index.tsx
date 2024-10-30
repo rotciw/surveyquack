@@ -3,6 +3,10 @@ import { json, LoaderFunction } from "@remix-run/cloudflare";
 import { getSession } from "~/utils/session.server";
 import { useState } from "react";
 
+interface LoaderData {
+  user: any; // Replace 'any' with your actual user type if available
+}
+
 export const loader: LoaderFunction = async ({ request }) => {
   const session = await getSession(request.headers.get("Cookie"));
   const user = session.get("user");
@@ -10,7 +14,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 };
 
 export default function Index() {
-  const { user } = useLoaderData();
+  const { user } = useLoaderData<LoaderData>();
   const [surveyId, setSurveyId] = useState('');
 
   const handleJoinSurvey = (e: React.FormEvent) => {

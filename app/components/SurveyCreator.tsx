@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useFetcher } from "@remix-run/react";
+import { Link, useFetcher } from "@remix-run/react";
 import { Survey, Category, Question } from "~/models/survey";
 import { ActiveCategoryCard } from "./ActiveCategoryCard";
 
-export function SurveyCreator({ user, surveyId, initialSurvey }: { user: string; surveyId?: string; initialSurvey: Survey }) {
+export function SurveyCreator({ user, surveyId, initialSurvey }: { user: { id: string }; surveyId?: string; initialSurvey: Survey }) {
   const fetcher = useFetcher<{ survey?: Survey; url?: string }>();
   const [survey, setSurvey] = useState<Survey>(initialSurvey);
 
@@ -210,18 +210,55 @@ export function SurveyCreator({ user, surveyId, initialSurvey }: { user: string;
     setSurvey(updatedSurvey);
   };
 
+  const toggleSurveyStatus = () => {
+    const newStatus = survey.status === 'open' ? 'closed' : 'open';
+    fetcher.submit(
+      { status: newStatus },
+      { method: "post", action: `/api/survey/${survey.id}/toggle-status` }
+    );
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
+      
+      <div className="flex justify-between items-center mb-6">
+   
+        <input
+          type="text"
+          value={survey.title}
+          onChange={(e) => updateSurveyTitle(e.target.value)}
+          className="text-3xl font-bold focus:outline-none focus:border-b-2 focus:border-indigo-500"
+          placeholder="Untitled Survey"
+        />
+        <div className="flex items-center gap-4">
+        
+          <span className={`text-sm ${survey.status === 'open' ? 'text-green-600' : 'text-red-600'}`}>
+            {survey.status === 'open' ? 'Survey is open' : 'Survey is closed'}
+          </span>
+          <button
+            onClick={toggleSurveyStatus}
+            className={`px-4 py-2 rounded-md text-white ${
+              survey.status === 'open' 
+                ? 'bg-red-500 hover:bg-red-600' 
+                : 'bg-green-500 hover:bg-green-600'
+            }`}
+          >
+            {survey.status === 'open' ? 'Close Survey' : 'Open Survey'}
+          </button>
+          <Link
+            to={`/survey/${survey.id}/stats`}
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            View Stats
+          </Link>
+          <button onClick={handleSave} className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+            Save
+          </button>
+        </div>
+      </div>
       <ActiveCategoryCard 
         survey={survey} 
         onCategoryChange={handleCategoryChange} 
-      />
-      <input
-        type="text"
-        value={survey.title}
-        onChange={(e) => updateSurveyTitle(e.target.value)}
-        className="text-3xl font-bold mb-6 w-full border-b-2 border-gray-200 focus:border-indigo-500 focus:outline-none"
-        placeholder="Untitled Survey"
       />
       <div className="flex">
         <div className="w-1/4 pr-4 border-r">
@@ -398,7 +435,6 @@ export function SurveyCreator({ user, surveyId, initialSurvey }: { user: string;
       >
         Create Survey
       </button>
-      <button onClick={handleSave}>Save Survey</button>
       {uniqueUrl && (
         <div className="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
           Survey created! Access it here: <a href={uniqueUrl} className="underline">{uniqueUrl}</a>

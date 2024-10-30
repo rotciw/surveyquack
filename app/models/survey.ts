@@ -4,6 +4,13 @@ export interface Survey {
   categories: Category[];
   user_id: string;
   active_category?: string;
+  status: 'draft' | 'open' | 'closed';
+}
+
+export interface SurveyResponse {
+  question_id: string;
+  answer_value: string;
+  taker_id: string;
 }
 
 export interface Category {

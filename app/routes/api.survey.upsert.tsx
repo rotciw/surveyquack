@@ -2,10 +2,12 @@ import { ActionFunction, json } from "@remix-run/cloudflare";
 import { authenticator } from "~/utils/auth.server";
 import { supabase } from "~/utils/supabase.server";
 
+type User = { id: string };
+
 export const action: ActionFunction = async ({ request }) => {
   const user = await authenticator.isAuthenticated(request, {
     failureRedirect: "/login",
-  });
+  }) as User;
 
   const formData = await request.formData();
   const surveyData = JSON.parse(formData.get("survey") as string);

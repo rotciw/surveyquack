@@ -68,13 +68,6 @@ export function SurveyTaker({ survey }: { survey: Survey }) {
     }
   }, [fetcher.state]);
 
-  const handleSubmit = () => {
-    fetcher.submit(
-      { answers: JSON.stringify(answers) },
-      { method: "post", action: `/api/survey/${survey.id}/submit` }
-    );
-  };
-
   const categoriesToShow = activeCategory
     ? survey.categories.filter(category => category.id === activeCategory)
     : [];
@@ -90,6 +83,9 @@ export function SurveyTaker({ survey }: { survey: Survey }) {
         </div>
       )}
       <h1 className="text-4xl font-bold mb-12 text-center text-gray-900">{survey.title}</h1>
+      <p className="text-sm text-gray-600 mb-8 text-center">
+        Your answers are automatically saved as you complete the survey
+      </p>
       {categoriesToShow.map((category, categoryIndex) => (
         <div key={category.id} className="mb-16">
           <h2 className="text-2xl font-semibold mb-8 text-gray-800">{category.title}</h2>
@@ -155,12 +151,6 @@ export function SurveyTaker({ survey }: { survey: Survey }) {
           ))}
         </div>
       ))}
-      <button
-        onClick={handleSubmit}
-        className="mt-12 w-full bg-blue-500 text-white px-6 py-4 rounded-lg text-xl font-semibold hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
-      >
-        Submit Survey
-      </button>
     </div>
   );
 }

@@ -1,13 +1,23 @@
-import { useLoaderData } from "@remix-run/react";
 import { json, LoaderFunction } from "@remix-run/cloudflare";
+import { useLoaderData } from "@remix-run/react";
+import { SurveyCreator } from "~/components/SurveyCreator";
+import { Survey } from "~/models/survey";
 import { authenticator } from "~/utils/auth.server";
 import { supabase } from "~/utils/supabase.server";
-import { SurveyCreator } from "~/components/SurveyCreator";
+
+interface User {
+  id: string;
+  // add other user properties as needed
+}
+
+interface LoaderData {
+  survey: Survey
+}
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   const user = await authenticator.isAuthenticated(request, {
     failureRedirect: "/",
-  });
+  }) as User;
 
   const { surveyId } = params;
 
@@ -50,7 +60,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 };
 
 export default function ManageSurvey() {
-  const { survey } = useLoaderData();
+  const { survey } = useLoaderData<typeof loader>() as LoaderData;
   
-  return <SurveyCreator user={survey.user_id} surveyId={survey.id} initialSurvey={survey} />;
+  return <SurveyCreator user={{ id: survey.user_id }} surveyId={survey.id} initialSurvey={survey} />;
 }

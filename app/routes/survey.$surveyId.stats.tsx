@@ -3,11 +3,22 @@ import { json, LoaderFunction } from "@remix-run/cloudflare";
 import { authenticator } from "~/utils/auth.server";
 import { supabase } from "~/utils/supabase.server";
 import { SurveyStats } from "~/components/SurveyStats";
+import { Survey, SurveyResponse } from "~/models/survey";
+
+interface AuthUser {
+  id: string;
+  // add other user properties if needed
+}
+
+type LoaderData = {
+  survey: Survey;
+  responses: SurveyResponse[]
+};
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   const user = await authenticator.isAuthenticated(request, {
     failureRedirect: "/login",
-  });
+  }) as AuthUser;
 
   const { surveyId } = params;
 
@@ -47,10 +58,10 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     categories: categories || []
   };
 
-  return json({ survey: fullSurvey, responses: responses || [] });
+  return json<LoaderData>({ survey: fullSurvey, responses: responses || [] });
 };
 
 export default function SurveyStatsPage() {
-  const { survey, responses } = useLoaderData<typeof loader>();
+  const { survey, responses } = useLoaderData<LoaderData>();
   return <SurveyStats survey={survey} responses={responses} />;
 } 

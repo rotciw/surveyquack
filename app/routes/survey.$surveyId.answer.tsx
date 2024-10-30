@@ -10,7 +10,7 @@ export const loader: LoaderFunction = async ({ params }) => {
     const { surveyId } = params;
     const { data: survey, error: surveyError } = await supabase
       .from('surveys')
-      .select('id, title, active_category')
+      .select('id, title, active_category, status')
       .eq('id', surveyId)
       .single();
 
@@ -21,6 +21,10 @@ export const loader: LoaderFunction = async ({ params }) => {
 
     if (!survey) {
       return json({ error: "Survey not found" }, { status: 404 });
+    }
+
+    if (survey.status !== 'open') {
+      return json({ error: "This survey is currently closed" }, { status: 403 });
     }
 
     const { data: categories, error: categoriesError } = await supabase
