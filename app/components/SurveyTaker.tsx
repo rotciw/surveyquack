@@ -88,21 +88,35 @@ export function SurveyTaker({
   const handleAnswerChange = (questionId: string, value: string) => {
     if (isSubmitted) return; // Prevent changes if submitted
     
-    const answer = { questionId, value };
-    setAnswers((prevAnswers) => {
-      const existingAnswerIndex = prevAnswers.findIndex((a) => a.questionId === questionId);
-      if (existingAnswerIndex > -1) {
-        return prevAnswers.map((a, index) =>
-          index === existingAnswerIndex ? answer : a
-        );
-      }
-      return [...prevAnswers, answer];
-    });
+    const existingAnswer = answers.find(a => a.questionId === questionId);
+    
+    if (existingAnswer && existingAnswer.value === value) {
+      // If clicking the same answer, remove it (deselect)
+      setAnswers(prevAnswers => prevAnswers.filter(a => a.questionId !== questionId));
+      
+      // Send the deletion to the server
+      fetcher.submit(
+        { answer: JSON.stringify({ questionId, value: null }) },
+        { method: "post", action: `/api/survey/${survey.id}/save-answer` }
+      );
+    } else {
+      // Normal answer selection logic
+      const answer = { questionId, value };
+      setAnswers(prevAnswers => {
+        const existingAnswerIndex = prevAnswers.findIndex(a => a.questionId === questionId);
+        if (existingAnswerIndex > -1) {
+          return prevAnswers.map((a, index) =>
+            index === existingAnswerIndex ? answer : a
+          );
+        }
+        return [...prevAnswers, answer];
+      });
 
-    fetcher.submit(
-      { answer: JSON.stringify(answer) },
-      { method: "post", action: `/api/survey/${survey.id}/save-answer` }
-    );
+      fetcher.submit(
+        { answer: JSON.stringify(answer) },
+        { method: "post", action: `/api/survey/${survey.id}/save-answer` }
+      );
+    }
   };
 
   const handleSubmit = () => {
@@ -235,6 +249,12 @@ export function SurveyTaker({
                         value={option}
                         checked={answers.some(a => a.questionId === question.id && a.value === option)}
                         onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                        onClick={(e) => {
+                          if (answers.some(a => a.questionId === question.id && a.value === option)) {
+                            e.preventDefault();
+                            handleAnswerChange(question.id, option);
+                          }
+                        }}
                         className="form-radio text-blue-500 focus:ring-blue-500 h-5 w-5"
                       />
                       <span className="text-gray-700 text-lg">{option}</span>
@@ -271,7 +291,13 @@ export function SurveyTaker({
                             value={value}
                             checked={isSelected}
                             onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                            className="sr-only" // hidden but accessible
+                            onClick={(e) => {
+                              if (isSelected) {
+                                e.preventDefault();
+                                handleAnswerChange(question.id, value);
+                              }
+                            }}
+                            className="sr-only"
                           />
                           <div 
                             className={`
