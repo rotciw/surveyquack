@@ -10,7 +10,7 @@ export const loader: LoaderFunction = async ({ params }) => {
     const { surveyId } = params;
     const { data: survey, error: surveyError } = await supabase
       .from('surveys')
-      .select('id, title')
+      .select('id, title, active_category')
       .eq('id', surveyId)
       .single();
 

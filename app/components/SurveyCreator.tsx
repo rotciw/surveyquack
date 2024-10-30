@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useFetcher } from "@remix-run/react";
 import { Survey, Category, Question } from "~/models/survey";
+import { ActiveCategoryCard } from "./ActiveCategoryCard";
 
 export function SurveyCreator({ user, surveyId, initialSurvey }: { user: string; surveyId?: string; initialSurvey: Survey }) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{ survey?: Survey; url?: string }>();
   const [survey, setSurvey] = useState<Survey>(initialSurvey);
 
   const [activeCategory, setActiveCategory] = useState(0);
@@ -203,8 +204,18 @@ export function SurveyCreator({ user, surveyId, initialSurvey }: { user: string;
     );
   };
 
+
+  const handleCategoryChange = async (categoryId: string) => {
+    const updatedSurvey = { ...survey, activeCategory: categoryId };
+    setSurvey(updatedSurvey);
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
+      <ActiveCategoryCard 
+        survey={survey} 
+        onCategoryChange={handleCategoryChange} 
+      />
       <input
         type="text"
         value={survey.title}

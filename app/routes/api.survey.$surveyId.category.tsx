@@ -9,27 +9,53 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       async start(controller) {
         const encoder = new TextEncoder();
         const sendCategory = (categoryId: string) => {
-          controller.enqueue(encoder.encode(`data: ${categoryId}\n\n`));
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(categoryId)}\n\n`));
         };
 
-        const { data: categories, error } = await supabase
-          .from('categories')
-          .select('id')
-          .eq('survey_id', surveyId);
+        // Initial active category
+        const { data: survey, error } = await supabase
+          .from('surveys')
+          .select('active_category')
+          .eq('id', surveyId)
+          .single();
 
         if (error) {
           controller.error(error);
           return;
         }
 
-        if (categories && categories.length > 0) {
-          sendCategory(categories[0].id);
+        if (survey?.active_category) {
+          sendCategory(survey.active_category);
         }
 
+        // Subscribe to changes
+        const subscription = supabase
+          .channel(`survey-${surveyId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'surveys',
+              filter: `id=eq.${surveyId}`,
+            },
+            (payload) => {
+              if (payload.new.active_category) {
+                sendCategory(payload.new.active_category);
+              }
+            }
+          )
+          .subscribe();
+
         // Keep the connection open
-        setInterval(() => {
+        const keepalive = setInterval(() => {
           controller.enqueue(encoder.encode(": keepalive\n\n"));
         }, 15000);
+
+        return () => {
+          clearInterval(keepalive);
+          subscription.unsubscribe();
+        };
       },
     }),
     {

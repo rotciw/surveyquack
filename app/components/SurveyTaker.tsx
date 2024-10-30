@@ -1,22 +1,72 @@
 import React, { useState, useEffect } from "react";
 import { useFetcher } from "@remix-run/react";
 import type { Survey, Answer } from "~/models/survey";
-
+import { Toast } from "./Toast";
 
 export function SurveyTaker({ survey }: { survey: Survey }) {
   const fetcher = useFetcher();
   const [answers, setAnswers] = useState<Answer[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string | undefined>(survey.activeCategory);
+  const [activeCategory, setActiveCategory] = useState<string | undefined>(survey.active_category);
+  const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | null>(null);
 
   useEffect(() => {
     const eventSource = new EventSource(`/api/survey/${survey.id}/category`);
+    
     eventSource.onmessage = (event) => {
       if (event.data !== ": keepalive") {
-        setActiveCategory(event.data);
+        const newCategory = JSON.parse(event.data);
+        setActiveCategory(newCategory);
       }
     };
-    return () => eventSource.close();
+
+    eventSource.onerror = (error) => {
+      console.error('EventSource error:', error);
+      eventSource.close();
+      // Retry connection after a delay
+      setTimeout(() => {
+        eventSource.close();
+        new EventSource(`/api/survey/${survey.id}/category`);
+      }, 1000);
+    };
+
+    return () => {
+      eventSource.close();
+    };
   }, [survey.id]);
+
+  const handleAnswerChange = (questionId: string, value: string) => {
+    const answer = { questionId, value };
+    
+    // Update local state
+    setAnswers((prevAnswers) => {
+      const existingAnswerIndex = prevAnswers.findIndex((a) => a.questionId === questionId);
+      if (existingAnswerIndex > -1) {
+        return prevAnswers.map((a, index) =>
+          index === existingAnswerIndex ? answer : a
+        );
+      } else {
+        return [...prevAnswers, answer];
+      }
+    });
+
+    // Save immediately
+    setSaveStatus('saving');
+    fetcher.submit(
+      { answer: JSON.stringify(answer) },
+      { method: "post", action: `/api/survey/${survey.id}/save-answer` }
+    );
+  };
+
+  // Handle save status updates
+  useEffect(() => {
+    if (fetcher.state === 'submitting') {
+      setSaveStatus('saving');
+    } else if (fetcher.state === 'idle' && saveStatus === 'saving') {
+      setSaveStatus('saved');
+      const timer = setTimeout(() => setSaveStatus(null), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [fetcher.state]);
 
   const handleSubmit = () => {
     fetcher.submit(
@@ -25,28 +75,22 @@ export function SurveyTaker({ survey }: { survey: Survey }) {
     );
   };
 
-  const handleAnswerChange = (questionId: string, value: string) => {
-    setAnswers((prevAnswers) => {
-      const existingAnswerIndex = prevAnswers.findIndex((a) => a.questionId === questionId);
-      if (existingAnswerIndex > -1) {
-        return prevAnswers.map((a, index) =>
-          index === existingAnswerIndex ? { ...a, value } : a
-        );
-      } else {
-        return [...prevAnswers, { questionId, value }];
-      }
-    });
-  };
-
-  const activeCategories = activeCategory
-    ? survey.categories.filter((category) => category.id === activeCategory)
-    : survey.categories;
-
+  const categoriesToShow = activeCategory
+    ? survey.categories.filter(category => category.id === activeCategory)
+    : [];
 
   return (
-    <div className="max-w-3xl mx-auto p-8 bg-white">
+    <div className="max-w-3xl mx-auto p-8 bg-white relative">
+      {saveStatus && (
+        <div className="fixed bottom-4 right-4">
+          <Toast 
+            message={saveStatus === 'saving' ? 'Saving...' : 'All changes saved'} 
+            type={saveStatus === 'saving' ? 'info' : 'success'}
+          />
+        </div>
+      )}
       <h1 className="text-4xl font-bold mb-12 text-center text-gray-900">{survey.title}</h1>
-      {activeCategories.map((category, categoryIndex) => (
+      {categoriesToShow.map((category, categoryIndex) => (
         <div key={category.id} className="mb-16">
           <h2 className="text-2xl font-semibold mb-8 text-gray-800">{category.title}</h2>
           {category.questions.map((question, questionIndex) => (

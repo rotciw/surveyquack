@@ -8,7 +8,7 @@ export const action: ActionFunction = async ({ request, params }) => {
   const categoryId = formData.get("categoryId") as string;
   const { data, error } = await supabase
     .from('surveys')
-    .update({ activeCategory: categoryId })
+    .update({ active_category: categoryId })
     .eq('id', surveyId);
 
   if (error) throw new Error(error.message);

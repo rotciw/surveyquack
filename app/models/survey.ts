@@ -3,7 +3,7 @@ export interface Survey {
   title: string;
   categories: Category[];
   user_id: string;
-  activeCategory?: string;
+  active_category?: string;
 }
 
 export interface Category {
