@@ -1,5 +1,5 @@
 import { createCookieSessionStorage, redirect } from "@remix-run/cloudflare";
-import type { AppLoadContext } from "@remix-run/cloudflare";
+import type { AppLoadContext, Session } from "@remix-run/cloudflare";
 import { getEnv } from "./env.server";
 
 export function getSessionStorage(context: AppLoadContext) {
@@ -28,4 +28,9 @@ export async function getSession(context: AppLoadContext, cookieHeader: string |
 export async function commitSession(context: AppLoadContext, session: any, options: any) {
   const storage = getSessionStorage(context);
   return storage.commitSession(session, options);
+}
+
+export async function destroySession(context: AppLoadContext, session: Session) {
+  const storage = getSessionStorage(context);
+  return storage.destroySession(session);
 }

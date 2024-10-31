@@ -3,7 +3,12 @@ import React, { useEffect, useState } from "react";
 import { Category, Question, Survey } from "~/models/survey";
 import { Toast } from "./Toast";
 
-export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: { user: { id: string }; surveyId?: string; initialSurvey: Survey; initialUrl?: string }) {
+export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: { 
+  user?: { id: string };
+  surveyId?: string;
+  initialSurvey: Survey;
+  initialUrl?: string
+}) {
   const fetcher = useFetcher<{ survey?: Survey; url?: string }>();
   const [survey, setSurvey] = useState<Survey>(initialSurvey);
 
@@ -207,7 +212,7 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: { u
     } else {
       setToast({ message: 'Creating survey...', type: 'info' });
       fetcher.submit(
-        { survey: JSON.stringify({ ...survey, user_id: user.id }) },
+        { survey: JSON.stringify({ ...survey, user_id: user?.id }) },
         { method: "post", action: "/api/surveys" }
       );
     }
