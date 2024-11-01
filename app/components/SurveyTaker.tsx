@@ -33,7 +33,7 @@ export function SurveyTaker({
   const [showWheel, setShowWheel] = useState(false);
   const fetcher = useFetcher();
   const [categorySubmissions, setCategorySubmissions] = useState<string[]>(initialCategorySubmissions);
-  console.log('categorySubmissions', isSubmitted);
+  
   useEffect(() => {
     const eventSource = new EventSource(`/api/survey/${survey.id}/status`);
     
