@@ -41,6 +41,11 @@ export function Dashboard({ surveys }: { surveys: Survey[] }) {
         >
           Create Your First Survey
         </button>
+        <CreateSurveyModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onConfirm={handleCreateSurvey}
+        />
       </div>
     );
   }
