@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFetcher } from "@remix-run/react";
 import type { Survey, Answer } from "~/models/survey";
 import { Toast } from "./Toast";
 import { ProgressBar } from "./ProgressBar";
 import { WheelModal } from "./WheelModal";
+import { useEventSourceWithRetry } from "~/utils/connection-helper";
 
 export function SurveyTaker({ 
   survey: initialSurvey, 
@@ -49,32 +50,17 @@ export function SurveyTaker({
     };
   }, [survey.id]);
 
-  useEffect(() => {
-    const eventSource = new EventSource(`/api/survey/${survey.id}/category`);
-    
-    eventSource.onmessage = (event) => {
-      if (event.data !== ": keepalive") {
-        const newCategory = JSON.parse(event.data);
-        setActiveCategory(newCategory);
-        setIsSubmitted(false);
-        setSaveStatus(null);
-        setSurvey(prev => ({ ...prev, active_category: newCategory }));
-      }
-    };
+  const handleCategoryUpdate = useCallback((newCategory: string) => {
+    setActiveCategory(newCategory);
+    setIsSubmitted(false);
+    setSaveStatus(null);
+    setSurvey(prev => ({ ...prev, active_category: newCategory }));
+  }, []);
 
-    eventSource.onerror = (error) => {
-      console.error('EventSource error:', error);
-      eventSource.close();
-      setTimeout(() => {
-        eventSource.close();
-        new EventSource(`/api/survey/${survey.id}/category`);
-      }, 1000);
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [survey.id]);
+  useEventSourceWithRetry(
+    `/api/survey/${survey.id}/category`,
+    handleCategoryUpdate
+  );
 
   // Add effect to monitor fetcher state
   useEffect(() => {

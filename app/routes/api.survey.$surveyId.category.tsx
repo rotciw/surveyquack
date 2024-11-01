@@ -38,11 +38,15 @@ export const loader: LoaderFunction = async ({ params, context }) => {
             sendCategory(String(payload.new.active_category));
           }
         })
-        .subscribe();
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            controller.enqueue(encoder.encode(": connected\n\n"));
+          }
+        });
 
       const keepalive = setInterval(() => {
         controller.enqueue(encoder.encode(": keepalive\n\n"));
-      }, 15000);
+      }, 5000);
 
       return () => {
         clearInterval(keepalive);
