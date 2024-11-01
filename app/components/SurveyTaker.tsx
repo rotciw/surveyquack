@@ -5,7 +5,6 @@ import type { Survey, Answer, Category } from "~/models/survey";
 import { Toast } from "./Toast";
 import { ProgressBar } from "./ProgressBar";
 import { WheelModal } from "./WheelModal";
-import { useEventSourceWithRetry } from "~/utils/connection-helper";
 
 // Add this helper function at the top of SurveyTaker component
 const isLastCategory = (currentCategory: string | undefined, categories: Category[]) => {
@@ -27,12 +26,14 @@ export function SurveyTaker({
 }) {
   const [survey, setSurvey] = useState(initialSurvey);
   const [answers, setAnswers] = useState<Answer[]>(initialAnswers);
-  const [activeCategory, setActiveCategory] = useState<string | undefined>(survey.active_category);
-  const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | 'submitted' | null>(null);
+  const [activeCategory, setActiveCategory] = useState(survey.active_category);
+  const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | 'submitted' | null>(
+    initialIsSubmitted ? 'submitted' : null
+  );
   const [isSubmitted, setIsSubmitted] = useState(initialIsSubmitted);
   const [showWheel, setShowWheel] = useState(false);
   const fetcher = useFetcher();
-  const [categorySubmissions, setCategorySubmissions] = useState<string[]>(initialCategorySubmissions);
+  const [categorySubmissions, setCategorySubmissions] = useState(initialCategorySubmissions);
   
   useEffect(() => {
     const eventSource = new EventSource(`/api/survey/${survey.id}/status`);
@@ -58,18 +59,37 @@ export function SurveyTaker({
     };
   }, [survey.id]);
 
+  // Update categorySubmissions when prop changes
+  useEffect(() => {
+    setCategorySubmissions(initialCategorySubmissions);
+  }, [initialCategorySubmissions]);
+  
   const handleCategoryUpdate = useCallback((newCategory: string) => {
+    if (!newCategory) return; // Guard against empty category updates
+    
     setActiveCategory(newCategory);
     const isNewCategorySubmitted = categorySubmissions.includes(newCategory);
     setIsSubmitted(isNewCategorySubmitted);
     setSaveStatus(isNewCategorySubmitted ? 'submitted' : null);
     setSurvey(prev => ({ ...prev, active_category: newCategory }));
-  }, [categorySubmissions]);
+  }, [categorySubmissions]); // categorySubmissions is now properly tracked
 
-  useEventSourceWithRetry(
-    `/api/survey/${survey.id}/category`,
-    handleCategoryUpdate
-  );
+  useEffect(() => {
+    const pollInterval = setInterval(async () => {
+      const response = await fetch(`/api/survey/${survey.id}/category`);
+      const data = await response.json() as { activeCategory: string };
+      if (data.activeCategory !== survey.active_category) {
+        handleCategoryUpdate(data.activeCategory);
+      }
+    }, 1000); // Poll every second
+
+    return () => clearInterval(pollInterval);
+  }, [survey.id, survey.active_category, handleCategoryUpdate]);
+
+  // Add debugging
+  useEffect(() => {
+    console.log('Active Category Changed:', activeCategory);
+  }, [activeCategory]);
 
   // Add effect to monitor fetcher state
   useEffect(() => {
