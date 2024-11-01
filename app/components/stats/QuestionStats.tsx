@@ -13,20 +13,36 @@ interface QuestionStatsProps {
 
 export function QuestionStats({ question, responses }: QuestionStatsProps) {
   const data = useMemo(() => {
-    if (question.type === 'multiple_choice' || question.type === 'linear_scale') {
+    if (question.type === 'multiple_choice') {
+      // Initialize counts with all options set to 0
+      const counts: Record<string, number> = {};
+      question.options?.forEach(option => {
+        counts[option] = 0;
+      });
+      
+      // Count responses
+      responses.forEach(r => {
+        counts[r.answer_value] = (counts[r.answer_value] || 0) + 1;
+      });
+
+      return Object.entries(counts)
+        .map(([name, value]) => ({ name, value }));
+    }
+
+    if (question.type === 'linear_scale') {
       const counts: Record<string, number> = {};
       responses.forEach(r => {
         counts[r.answer_value] = (counts[r.answer_value] || 0) + 1;
       });
       
-      if (question.type === 'linear_scale' && question.scale_start !== undefined && question.scale_end !== undefined) {
+      if (question.scale_start !== undefined && question.scale_end !== undefined) {
         for (let i = question.scale_start; i <= question.scale_end; i++) {
           counts[i.toString()] = counts[i.toString()] || 0;
         }
       }
 
       return Object.entries(counts)
-        .sort((a, b) => question.type === 'linear_scale' ? Number(a[0]) - Number(b[0]) : 0)
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
         .map(([name, value]) => ({ name, value }));
     }
 
