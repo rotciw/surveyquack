@@ -13,9 +13,21 @@ interface SurveyStatisticsProps {
 export function SurveyStatistics({ survey, responses, selectedCategoryId }: SurveyStatisticsProps) {
   const stats = useMemo(() => {
     const uniqueRespondents = new Set(responses.map(r => r.taker_id)).size;
-    const responseRate = responses.length / (survey.categories.reduce(
-      (acc, cat) => acc + cat.questions.length, 0
-    )) * 100;
+    
+    // Calculate response rate per question
+    const questionResponseRates = survey.categories.flatMap(cat => 
+      cat.questions.map(q => {
+        const questionResponses = new Set(
+          responses.filter(r => r.question_id === q.id).map(r => r.taker_id)
+        ).size;
+        return (questionResponses / uniqueRespondents) * 100;
+      })
+    );
+    
+    // Average response rate across all questions
+    const responseRate = questionResponseRates.length 
+      ? questionResponseRates.reduce((a, b) => a + b, 0) / questionResponseRates.length
+      : 0;
     
     return {
       uniqueRespondents,
