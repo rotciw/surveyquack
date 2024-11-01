@@ -58,6 +58,7 @@ export function SurveyTaker({
         setActiveCategory(newCategory);
         setIsSubmitted(false);
         setSaveStatus(null);
+        setSurvey(prev => ({ ...prev, active_category: newCategory }));
       }
     };
 
