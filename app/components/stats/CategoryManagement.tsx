@@ -1,5 +1,6 @@
 import { Survey } from "~/models/survey";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
 interface CategoryManagementProps {
   survey: Survey;
@@ -14,10 +15,12 @@ export function CategoryManagement({
   onCategoryStatsSelect,
   selectedCategoryStats 
 }: CategoryManagementProps) {
-  // Set first category as default if no active category
-  if (!survey.active_category && survey.categories.length > 0) {
-    onCategoryChange(survey.categories[0].id);
-  }
+  useEffect(() => {
+    // Set first category as default if no active category
+    if (!survey.active_category && survey.categories.length > 0) {
+      onCategoryChange(survey.categories[0].id);
+    }
+  }, [survey.active_category, survey.categories, onCategoryChange]);
 
   return (
     <div className="space-y-6">
