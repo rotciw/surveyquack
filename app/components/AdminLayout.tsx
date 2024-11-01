@@ -41,7 +41,7 @@ export function AdminLayout({ survey, sidebar, content }: AdminLayoutProps) {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Manage Survey
+                Edit Survey
               </Link>
             </div>
           </div>
