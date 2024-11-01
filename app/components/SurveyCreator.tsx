@@ -1,6 +1,10 @@
-import { Link, useFetcher } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
+import { motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
 import { Category, Question, Survey } from "~/models/survey";
+import { CategoryQuestions } from "./survey-creator/CategoryQuestions";
+import { CategorySidebar } from "./survey-creator/CategorySidebar";
+import { SurveyHeader } from "./survey-creator/SurveyHeader";
 import { Toast } from "./Toast";
 
 export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: { 
@@ -11,7 +15,6 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
 }) {
   const fetcher = useFetcher<{ survey?: Survey; url?: string }>();
   const [survey, setSurvey] = useState<Survey>(initialSurvey);
-
   const [activeCategory, setActiveCategory] = useState(0);
   const [activeQuestion, setActiveQuestion] = useState(0);
   const [uniqueUrl, setUniqueUrl] = useState<string | null>(initialUrl || null);
@@ -270,258 +273,71 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
     }
   };
 
+  const handleQuestionsReorder = (categoryIndex: number, newOrder: Question[]) => {
+    setSurvey(prev => ({
+      ...prev,
+      categories: prev.categories.map((cat, idx) =>
+        idx === categoryIndex ? { ...cat, questions: newOrder } : cat
+      )
+    }));
+  };
+
   return (
-    <div className="my-4">
-        
-      {uniqueUrl && (
-        <div className="max-w-4xl mx-auto mb-4 p-4 bg-white shadow-lg rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">Survey URL</h3>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={uniqueUrl}
-                  readOnly
-                  className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm text-gray-700 w-full"
-                />
-                <button
-                  onClick={() => navigator.clipboard.writeText(uniqueUrl)}
-                  className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors"
-                >
-                  Copy
-                </button>
-              </div>
-            </div>
-            <div className="ml-4">
-              <Link
-                to={uniqueUrl}
-                target="_blank"
-                className="px-4 py-2 bg-orange-100 text-orange-700 rounded-md hover:bg-orange-200 transition-colors"
+    <div className="h-screen flex flex-col">
+      <SurveyHeader 
+        survey={survey}
+        uniqueUrl={uniqueUrl}
+        updateSurveyTitle={updateSurveyTitle}
+        toggleSurveyStatus={toggleSurveyStatus}
+        onSave={handleSave}
+        isSaving={fetcher.state === 'submitting'}
+      />
+
+      <div className="flex-1 overflow-hidden">
+        <div className="max-w-[1600px] mx-auto h-full flex flex-col">
+          <div className="flex-1 flex overflow-hidden">
+            <CategorySidebar 
+              categories={survey.categories}
+              activeCategory={activeCategory}
+              setActiveCategory={setActiveCategory}
+              setActiveQuestion={setActiveQuestion}
+              updateCategoryTitle={updateCategoryTitle}
+              duplicateCategory={duplicateCategory}
+              removeCategory={removeCategory}
+              addCategory={addCategory}
+            />
+
+            <div className="flex-1 overflow-y-auto p-4">
+              <CategoryQuestions
+                questions={survey.categories[activeCategory].questions}
+                activeCategory={activeCategory}
+                onReorder={(newOrder) => handleQuestionsReorder(activeCategory, newOrder)}
+                updateQuestionTitle={updateQuestionTitle}
+                updateQuestionType={updateQuestionType}
+                updateOption={updateOption}
+                addOption={addOption}
+                removeOption={removeOption}
+                removeQuestion={removeQuestion}
+                duplicateQuestion={duplicateQuestion}
+                updateScaleStart={updatescale_start}
+                updateScaleEnd={updatescale_end}
+                updateScaleLabel={updateScaleLabel}
+              />
+
+              <motion.button
+                onClick={() => addQuestion(activeCategory)}
+                className="w-full mt-4 py-3 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
               >
-                Preview
-              </Link>
+                Add Question
+              </motion.button>
             </div>
           </div>
         </div>
-      )}
-    <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-4">
+      </div>
       
-      <div className="flex justify-between items-center mb-6">
-   
-        <input
-          type="text"
-          value={survey.title}
-          onChange={(e) => updateSurveyTitle(e.target.value)}
-          className="text-3xl font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 border-b-2 border-gray-200 hover:border-orange-300 transition-colors px-2 py-1 rounded-t-md "
-          placeholder="Untitled Survey"
-        />
-        <div className="flex items-center gap-4">
-        
-          <span className={`text-sm ${survey.status === 'open' ? 'text-green-600' : 'text-red-600'}`}>
-            {survey.status === 'open' ? 'Survey is open' : 'Survey is closed'}
-          </span>
-          <button
-            onClick={toggleSurveyStatus}
-            className={`px-4 py-2 rounded-md text-white ${
-              survey.status === 'open' 
-                ? 'bg-red-500 hover:bg-red-600' 
-                : 'bg-green-500 hover:bg-green-600'
-            }`}
-          >
-            {survey.status === 'open' ? 'Close Survey' : 'Open Survey'}
-          </button>
-          <Link
-            to={`/survey/${survey.id}/stats`}
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-          >
-            View Stats
-          </Link>
-        </div>
-      </div>
-
-      <div className="flex">
-        <div className="w-1/4 pr-4 border-r">
-          {survey.categories?.map((category, index) => (
-            <div key={category.id}>
-              <div
-                className={`p-2 mb-2 cursor-pointer rounded ${
-                  index === activeCategory ? 'bg-indigo-100' : 'hover:bg-gray-100'
-                }`}
-                onClick={() => {
-                  setActiveCategory(index);
-                  setActiveQuestion(0);
-                }}
-              >
-                <span>{category.title}</span>
-                <textarea
-                  className="mt-2 w-full p-2 text-sm border rounded"
-                  placeholder="Add category description (optional)"
-                  value={category.description || ''}
-                  onChange={(e) => {
-                    const newCategories = [...survey.categories];
-                    newCategories[index] = {
-                      ...newCategories[index],
-                      description: e.target.value
-                    };
-                    setSurvey({ ...survey, categories: newCategories });
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-            </div>
-          ))}
-          <button
-            onClick={addCategory}
-            className="w-full mt-4 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Add Category
-          </button>
-        </div>
-        <div className="w-3/4 pl-4">
-          <input
-            type="text"
-            value={survey?.categories ? survey.categories[activeCategory]?.title : ''}
-            onChange={(e) => updateCategoryTitle(activeCategory, e.target.value)}
-            className="text-xl font-semibold mb-4 w-full border-b border-gray-200 focus:border-indigo-500 focus:outline-none"
-            placeholder="Untitled Category"
-          />
-          {survey.categories && survey.categories[activeCategory]?.questions.map((question, index) => (
-            <div
-              key={question.id}
-              className={`p-4 mb-4 border rounded ${
-                index === activeQuestion ? 'border-indigo-500' : 'border-gray-200'
-              }`}
-              onClick={() => setActiveQuestion(index)}
-            >
-              <div className="flex justify-between items-center mb-2">
-                <input
-                  type="text"
-                  value={question.title}
-                  onChange={(e) => updateQuestionTitle(activeCategory, index, e.target.value)}
-                  className="text-lg font-medium w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 hover:border-orange-300 transition-colors"
-                  placeholder="Question Title"
-                />
-                <div className="ml-2">
-                  <button
-                    onClick={() => duplicateQuestion(activeCategory, index)}
-                    className="mr-2 text-blue-500 hover:text-blue-700"
-                  >
-                    Copy
-                  </button>
-                  {survey.categories[activeCategory].questions.length > 1 && (
-                    <button
-                      onClick={() => removeQuestion(activeCategory, index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              </div>
-              <select
-                value={question.type}
-                onChange={(e) => updateQuestionType(activeCategory, index, e.target.value as 'multiple_choice' | 'free_text' | 'linear_scale')}
-                className="mb-2 p-2 border rounded"
-              >
-                <option value="multiple_choice">Multiple Choice</option>
-                <option value="free_text">Free Text</option>
-                <option value="linear_scale">Linear Scale</option>
-              </select>
-              {question.type === 'linear_scale' && (
-                <div className="mt-2">
-                  <label className="block text-sm font-medium text-gray-700">Scale Range</label>
-                  <div className="flex items-center mt-1">
-                    <input
-                      type="number"
-                      value={question.scale_start}
-                      onChange={(e) => updatescale_start(activeCategory, index, parseInt(e.target.value))}
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 hover:border-orange-300 transition-colors mr-2"
-                    />
-                    <span>to</span>
-                    <input
-                      type="number"
-                      value={question.scale_end}
-                      onChange={(e) => updatescale_end(activeCategory, index, parseInt(e.target.value))}
-                      className="w-20 p-2 border rounded ml-2"
-                    />
-                  </div>
-                  <div className="mt-2">
-                    <label className="block text-sm font-medium text-gray-700">Scale Labels</label>
-                    <div className="flex items-center mt-1">
-                      <input
-                        type="text"
-                        value={question.scale_left_label || ''}
-                        onChange={(e) => updateScaleLabel(activeCategory, index, 'left', e.target.value)}
-                        className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 hover:border-orange-300 transition-colors mr-2"
-                        placeholder="Left label"
-                      />
-                      <input
-                        type="text"
-                        value={question.scale_right_label || ''}
-                        onChange={(e) => updateScaleLabel(activeCategory, index, 'right', e.target.value)}
-                        className="w-1/2 p-2 border rounded ml-2"
-                        placeholder="Right label"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-              {question.type === 'multiple_choice' && (
-                <div>
-                  {question.options?.map((option, optionIndex) => (
-                    <div key={optionIndex} className="flex items-center mb-2">
-                      <input
-                        type="text"
-                        value={option}
-                        onChange={(e) => updateOption(activeCategory, index, optionIndex, e.target.value)}
-                        className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 hover:border-orange-300 transition-colors"
-                        placeholder={`Option ${optionIndex + 1}`}
-                      />
-                      <button
-                        onClick={() => removeOption(activeCategory, index, optionIndex)}
-                        className="ml-2 text-red-500 hover:text-red-700"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => addOption(activeCategory, index)}
-                    className="mt-2 py-1 px-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Add Option
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-          <button
-            onClick={() => addQuestion(activeCategory)}
-            className="w-full mt-4 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-          >
-            Add Question
-          </button>
-        </div>
-      </div>
-      <div className="flex gap-4">
-        <button
-          onClick={handleSubmit}
-          className="mt-8 flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          {surveyId ? 'Save Survey' : 'Create Survey'}
-        </button>
-        {surveyId && (
-          <button
-            onClick={handleDelete}
-            className="mt-8 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-          >
-            Delete Survey
-          </button>
-        )}
-      </div>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      </div>
     </div>
   );
 }
