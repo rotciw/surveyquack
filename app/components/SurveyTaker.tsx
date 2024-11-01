@@ -24,9 +24,28 @@ export function SurveyTaker({
   isSubmitted?: boolean;
   categorySubmissions?: string[];
 }) {
+  // Early return if survey is not available
+  if (!initialSurvey) {
+    return (
+      <div className="max-w-3xl mx-auto p-8 bg-white relative mt-12">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4 text-gray-900">Survey Not Found</h1>
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-700">
+              This survey could not be loaded. Maybe it is not active yet. 
+              <br/>Please check the URL and try again.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const [survey, setSurvey] = useState(initialSurvey);
   const [answers, setAnswers] = useState<Answer[]>(initialAnswers);
-  const [activeCategory, setActiveCategory] = useState(survey.active_category);
+  const [activeCategory, setActiveCategory] = useState<string | null>(
+    initialSurvey.active_category || null
+  );
   const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | 'submitted' | null>(
     initialIsSubmitted ? 'submitted' : null
   );
@@ -160,7 +179,7 @@ export function SurveyTaker({
       setIsSubmitted(true);
       setSaveStatus('submitted');
       
-      if (isLastCategory(activeCategory, survey.categories)) {
+      if (isLastCategory(activeCategory || undefined, survey.categories)) {
         setShowWheel(true);
       }
     }
@@ -172,10 +191,12 @@ export function SurveyTaker({
   });
 
   useEffect(() => {
-    if (activeCategory === undefined && survey.categories.length > 0) {
-      setActiveCategory(survey.active_category || survey.categories[0].id);
+    if (!activeCategory && survey.categories.length > 0) {
+      const firstCategory = survey.categories[0].id;
+      setActiveCategory(firstCategory);
+      setSurvey(prev => ({ ...prev, active_category: firstCategory }));
     }
-  }, [activeCategory, survey.categories, survey.active_category]);
+  }, [activeCategory, survey.categories]);
 
   const calculateProgress = () => {
     const totalQuestions = survey.categories.reduce((acc, category) => 
@@ -189,6 +210,36 @@ export function SurveyTaker({
       answeredQuestions
     };
   };
+
+  if (survey.status === 'closed') {
+    return (
+      <div className="max-w-3xl mx-auto p-8 bg-white relative mt-12">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4 text-gray-900">{survey.title}</h1>
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-700">
+              This survey is currently closed. Please check back later or contact the survey administrator.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!survey.active_category) {
+    return (
+      <div className="max-w-3xl mx-auto p-8 bg-white relative mt-12">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4 text-gray-900">{survey.title}</h1>
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-blue-700">
+              Waiting for the survey administrator to activate a category. Please refresh the page in a few moments.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div 
@@ -234,7 +285,7 @@ export function SurveyTaker({
       {isSubmitted && (
         <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
           <p className="text-green-700">
-            {isLastCategory(activeCategory, survey.categories) 
+            {isLastCategory(activeCategory || undefined, survey.categories) 
               ? "Thank you for completing the survey! You'll now have a chance to spin the wheel."
               : "Your answers for this category have been submitted. Please wait for the survey administrator to activate the next category before continuing."
             }
