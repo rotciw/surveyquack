@@ -1,20 +1,29 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFetcher } from "@remix-run/react";
-import type { Survey, Answer } from "~/models/survey";
+import type { Survey, Answer, Category } from "~/models/survey";
 import { Toast } from "./Toast";
 import { ProgressBar } from "./ProgressBar";
 import { WheelModal } from "./WheelModal";
 import { useEventSourceWithRetry } from "~/utils/connection-helper";
 
+// Add this helper function at the top of SurveyTaker component
+const isLastCategory = (currentCategory: string | undefined, categories: Category[]) => {
+  if (!currentCategory) return false;
+  const currentIndex = categories.findIndex(c => c.id === currentCategory);
+  return currentIndex === categories.length - 1;
+};
+
 export function SurveyTaker({ 
   survey: initialSurvey, 
   answers: initialAnswers = [], 
-  isSubmitted: initialIsSubmitted = false 
+  isSubmitted: initialIsSubmitted = false,
+  categorySubmissions: initialCategorySubmissions = []
 }: { 
   survey: Survey; 
   answers?: Answer[]; 
   isSubmitted?: boolean;
+  categorySubmissions?: string[];
 }) {
   const [survey, setSurvey] = useState(initialSurvey);
   const [answers, setAnswers] = useState<Answer[]>(initialAnswers);
@@ -23,9 +32,8 @@ export function SurveyTaker({
   const [isSubmitted, setIsSubmitted] = useState(initialIsSubmitted);
   const [showWheel, setShowWheel] = useState(false);
   const fetcher = useFetcher();
-
-
-
+  const [categorySubmissions, setCategorySubmissions] = useState<string[]>(initialCategorySubmissions);
+  console.log('categorySubmissions', isSubmitted);
   useEffect(() => {
     const eventSource = new EventSource(`/api/survey/${survey.id}/status`);
     
@@ -52,10 +60,11 @@ export function SurveyTaker({
 
   const handleCategoryUpdate = useCallback((newCategory: string) => {
     setActiveCategory(newCategory);
-    setIsSubmitted(false);
-    setSaveStatus(null);
+    const isNewCategorySubmitted = categorySubmissions.includes(newCategory);
+    setIsSubmitted(isNewCategorySubmitted);
+    setSaveStatus(isNewCategorySubmitted ? 'submitted' : null);
     setSurvey(prev => ({ ...prev, active_category: newCategory }));
-  }, []);
+  }, [categorySubmissions]);
 
   useEventSourceWithRetry(
     `/api/survey/${survey.id}/category`,
@@ -77,7 +86,10 @@ export function SurveyTaker({
   }, [fetcher.state, saveStatus]);
 
   const handleAnswerChange = (questionId: string, value: string) => {
-    if (isSubmitted) return; // Prevent changes if submitted
+    // Check if current category is submitted
+    if (activeCategory && categorySubmissions.includes(activeCategory)) {
+      return; // Prevent changes if category is submitted
+    }
     
     const existingAnswer = answers.find(a => a.questionId === questionId);
     
@@ -85,7 +97,6 @@ export function SurveyTaker({
       // If clicking the same answer, remove it (deselect)
       setAnswers(prevAnswers => prevAnswers.filter(a => a.questionId !== questionId));
       
-      // Send the deletion to the server
       fetcher.submit(
         { answer: JSON.stringify({ questionId, value: null }) },
         { method: "post", action: `/api/survey/${survey.id}/save-answer` }
@@ -116,9 +127,22 @@ export function SurveyTaker({
         { answers: JSON.stringify(answers) },
         { method: "post", action: `/api/survey/${survey.id}/submit-answers` }
       );
+
+      // Watch for the response
+      if (fetcher.data && typeof fetcher.data === 'object' && 'error' in fetcher.data) {
+        alert(fetcher.data.error);
+        return;
+      }
+
+      if (activeCategory) {
+        setCategorySubmissions(prev => [...prev, activeCategory]);
+      }
       setIsSubmitted(true);
       setSaveStatus('submitted');
-      setShowWheel(true);
+      
+      if (isLastCategory(activeCategory, survey.categories)) {
+        setShowWheel(true);
+      }
     }
   };
 
@@ -145,7 +169,6 @@ export function SurveyTaker({
       answeredQuestions
     };
   };
-
 
   return (
     <motion.div 
@@ -191,7 +214,10 @@ export function SurveyTaker({
       {isSubmitted && (
         <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
           <p className="text-green-700">
-            Your answers have been submitted. Please wait for the survey administrator to advance to the next category.
+            {isLastCategory(activeCategory, survey.categories) 
+              ? "Thank you for completing the survey! You'll now have a chance to spin the wheel."
+              : "Your answers for this category have been submitted. Please wait for the survey administrator to activate the next category before continuing."
+            }
           </p>
         </div>
       )}
@@ -254,7 +280,8 @@ export function SurveyTaker({
                             handleAnswerChange(question.id, option);
                           }
                         }}
-                        className="form-radio text-blue-500 focus:ring-blue-500 h-5 w-5"
+                        disabled={Boolean(activeCategory && categorySubmissions.includes(activeCategory))}
+                        className="form-radio text-blue-500 focus:ring-blue-500 h-5 w-5 disabled:opacity-50"
                       />
                       <span className="text-gray-700 text-lg">{option}</span>
                     </motion.label>
@@ -296,19 +323,30 @@ export function SurveyTaker({
                                 handleAnswerChange(question.id, value);
                               }
                             }}
+                            disabled={Boolean(activeCategory && categorySubmissions.includes(activeCategory))}
                             className="sr-only"
                           />
                           <div 
                             className={`
                               cursor-pointer text-center p-3 rounded-lg border-2 
                               ${isSelected 
-                                ? 'border-blue-500 bg-blue-50' 
-                                : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50'
+                                ? activeCategory && categorySubmissions.includes(activeCategory)
+                                  ? 'border-gray-300 bg-gray-100 cursor-not-allowed' 
+                                  : 'border-blue-500 bg-blue-50'
+                                : activeCategory && categorySubmissions.includes(activeCategory)
+                                  ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                                  : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50'
                               } 
                               transition-colors
                             `}
                           >
-                            <span className="text-lg font-medium">{value}</span>
+                            <span className={`text-lg font-medium ${
+                              activeCategory && categorySubmissions.includes(activeCategory)
+                                ? 'text-gray-500'
+                                : ''
+                            }`}>
+                              {value}
+                            </span>
                           </div>
                         </motion.label>
                       );
@@ -326,7 +364,8 @@ export function SurveyTaker({
                     name={`question-${question.id}`}
                     value={answers.find(a => a.questionId === question.id)?.value || ''}
                     onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                    className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-blue-500 transition-colors resize-none min-h-[120px]"
+                    disabled={Boolean(activeCategory && categorySubmissions.includes(activeCategory))}
+                    className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-blue-500 transition-colors resize-none min-h-[120px] disabled:opacity-50 disabled:bg-gray-100"
                     placeholder="Type your answer here..."
                   />
                 </motion.div>
@@ -344,7 +383,10 @@ export function SurveyTaker({
       >
         Your answers are automatically saved as you complete the survey
       </motion.p>
-    {!isSubmitted && categoriesToShow.length > 0 && (
+
+      {activeCategory && 
+       !categorySubmissions.includes(activeCategory) && 
+       answers.some(a => a.questionId.startsWith(activeCategory)) && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

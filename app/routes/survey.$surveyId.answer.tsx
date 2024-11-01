@@ -72,14 +72,30 @@ export const loader: LoaderFunction = async ({ params, context, request }) => {
       categories: categories || []
     };
 
+    // Get current category submissions for this taker
+    let categorySubmissions: string[] = [];
+    if (takerId) {
+      const { data: submissions } = await supabase
+        .from('category_submissions')
+        .select('category_id')
+        .eq('survey_id', surveyId)
+        .eq('taker_id', takerId);
+      
+      if (submissions) {
+        categorySubmissions = submissions.map(s => s.category_id);
+        isSubmitted = categorySubmissions.includes(survey.active_category || '');
+      }
+    }
+
     return json({ 
       survey: fullSurvey,
       answers: existingAnswers,
-      isSubmitted
+      isSubmitted,
+      categorySubmissions
     });
 };
 
 export default function SurveyAnswerPage() {
-  const { survey, answers, isSubmitted } = useLoaderData<typeof loader>();
-  return <SurveyTaker survey={survey} answers={answers} isSubmitted={isSubmitted} />;
+  const { survey, answers, isSubmitted, categorySubmissions } = useLoaderData<typeof loader>();
+  return <SurveyTaker survey={survey} answers={answers} isSubmitted={isSubmitted} categorySubmissions={categorySubmissions} />;
 }
