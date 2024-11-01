@@ -386,7 +386,7 @@ export function SurveyTaker({
 
       {activeCategory && 
        !categorySubmissions.includes(activeCategory) && 
-       answers.some(a => a.questionId.startsWith(activeCategory)) && (
+       answers.some(a => survey.categories.some(c => c.questions.some(q => q.id === a.questionId))) && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -394,9 +394,9 @@ export function SurveyTaker({
         >
           <button
             onClick={handleSubmit}
-            className="w-full py-3 px-4 bg-blue-500 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="w-full py-3 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
           >
-            Submit Answers
+            Submit Category
           </button>
         </motion.div>
       )}
