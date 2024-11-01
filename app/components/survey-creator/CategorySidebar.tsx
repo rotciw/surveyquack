@@ -1,4 +1,6 @@
 import { Category } from "~/models/survey";
+import { Reorder } from "framer-motion";
+import { DraggableCategory } from "./DraggableCategory";
 
 interface CategorySidebarProps {
   categories: Category[];
@@ -10,6 +12,7 @@ interface CategorySidebarProps {
   duplicateCategory: (index: number) => void;
   removeCategory: (index: number) => void;
   addCategory: () => void;
+  onReorder: (newOrder: Category[]) => void;
 }
 
 export function CategorySidebar({
@@ -21,73 +24,78 @@ export function CategorySidebar({
   updateCategoryDescription,
   duplicateCategory,
   removeCategory,
-  addCategory
+  addCategory,
+  onReorder
 }: CategorySidebarProps) {
   return (
-    <div className="w-72 border-r bg-gray-50 flex flex-col">
+    <div className="w-96 border-r bg-gray-50 flex flex-col">
       <div className="p-4">
-        <h2 className="text-sm font-semibold text-gray-700 mb-2">Categories</h2>
-        <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">Categories</h2>
+        <Reorder.Group 
+          axis="y" 
+          values={categories} 
+          onReorder={onReorder}
+          className="space-y-3 max-h-[calc(100vh-200px)] overflow-y-auto pr-2"
+        >
           {categories?.map((category, index) => (
-            <div
+            <DraggableCategory
               key={category.id}
-              className={`p-3 rounded cursor-pointer transition-colors ${
-                index === activeCategory 
-                  ? 'bg-blue-50 border-2 border-blue-500' 
-                  : 'bg-white border-2 border-transparent hover:border-blue-300'
-              }`}
-              onClick={() => {
-                setActiveCategory(index);
-                setActiveQuestion(0);
-              }}
+              category={category}
+              index={index}
+              activeCategory={activeCategory}
+              onCategoryClick={() => setActiveCategory(index)}
             >
-              <input
-                type="text"
-                value={category.title}
-                onChange={(e) => updateCategoryTitle(index, e.target.value)}
-                className="w-full bg-transparent focus:outline-none font-medium text-sm"
-                placeholder="Category Title"
-                onClick={(e) => e.stopPropagation()}
-              />
-              <textarea
-                className="mt-2 w-full text-sm p-2 border rounded bg-white resize-none"
-                placeholder="Category description..."
-                value={category.description || ''}
-                rows={2}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  updateCategoryDescription?.(index, newValue);
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-              <div className="mt-2 flex justify-end gap-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    duplicateCategory(index);
-                  }}
-                  className="text-xs text-blue-600 hover:text-blue-800"
-                >
-                  Duplicate
-                </button>
-                {categories.length > 1 && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeCategory(index);
-                    }}
-                    className="text-xs text-red-600 hover:text-red-800"
-                  >
-                    Remove
-                  </button>
-                )}
+              <div className="flex items-start gap-2">
+                <div className="cursor-move p-2 hover:bg-gray-100 rounded touch-none">
+                  ⋮⋮
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={category.title}
+                    onChange={(e) => updateCategoryTitle(index, e.target.value)}
+                    className="w-full bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-300 rounded p-1 font-medium text-base"
+                    placeholder="Category Title"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <textarea
+                    className="mt-3 w-full text-sm p-2 border rounded bg-white resize-none focus:ring-2 focus:ring-blue-300 focus:border-transparent"
+                    placeholder="Category description..."
+                    value={category.description || ''}
+                    rows={3}
+                    onChange={(e) => updateCategoryDescription?.(index, e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <div className="mt-3 flex justify-end gap-3">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        duplicateCategory(index);
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50"
+                    >
+                      Duplicate
+                    </button>
+                    {categories.length > 1 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeCategory(index);
+                        }}
+                        className="text-sm text-red-600 hover:text-red-800 px-2 py-1 rounded hover:bg-red-50"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
+            </DraggableCategory>
           ))}
-        </div>
+        </Reorder.Group>
         <button
           onClick={addCategory}
-          className="w-full mt-3 py-2 px-3 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+          className="w-full mt-4 py-3 px-4 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors font-medium"
         >
           Add Category
         </button>

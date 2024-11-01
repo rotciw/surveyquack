@@ -16,15 +16,12 @@ interface LoaderData {
 }
 
 export const loader: LoaderFunction = async ({ request, params, context }) => {
-  const user = await getAuthenticator(context).isAuthenticated(request, {
-    failureRedirect: "/",
-  }) as User;
-
   const { surveyId } = params;
-
-  if (!surveyId) throw new Error("Survey ID is required");
   const supabase = getSupabaseClient(context);
-  // Fetch survey data
+  const authenticator = getAuthenticator(context);
+  const user = await authenticator.isAuthenticated(request);
+
+  // First get the survey
   const { data: survey, error: surveyError } = await supabase
     .from('surveys')
     .select('*')
@@ -32,16 +29,9 @@ export const loader: LoaderFunction = async ({ request, params, context }) => {
     .single();
 
   if (surveyError) throw new Error(surveyError.message);
+  if (!survey) throw new Error("Survey not found");
 
-  if (!survey) {
-    throw new Response("Survey not found", { status: 404 });
-  }
-
-  if (survey.user_id !== user.id) {
-    throw new Response("Unauthorized", { status: 403 });
-  }
-
-  // Fetch categories with their questions
+  // Then get categories with their questions
   const { data: categories, error: categoriesError } = await supabase
     .from('categories')
     .select(`
@@ -50,13 +40,14 @@ export const loader: LoaderFunction = async ({ request, params, context }) => {
       description,
       questions (id, title, type, options, scale_start, scale_end, scale_left_label, scale_right_label)
     `)
-    .eq('survey_id', surveyId);
+    .eq('survey_id', surveyId)
 
   if (categoriesError) throw new Error(categoriesError.message);
 
+  // Only set categories if they exist from the database
   const fullSurvey = {
     ...survey,
-    categories: categories || []
+    categories: categories || [] // Don't create new categories if none exist
   };
 
   return json({ 

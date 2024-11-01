@@ -57,6 +57,12 @@ export function SurveyHeader({
               >
                 Preview
               </a>
+              <a
+                href={`/survey/${survey.id}/stats`}
+                className="text-green-600 hover:text-green-700 px-4 py-2 border border-green-600 rounded hover:bg-green-50 transition-colors flex-shrink-0"
+              >
+                Admin
+              </a>
             </>
           )}
           <button

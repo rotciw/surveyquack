@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { motion } from "framer-motion";
+import { clamp, motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
 import { Category, Question, Survey } from "~/models/survey";
 import { CategoryQuestions } from "./survey-creator/CategoryQuestions";
@@ -62,6 +62,29 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
   const updateCategoryTitle = (categoryIndex: number, title: string) => {
     const newCategories = [...survey.categories];
     newCategories[categoryIndex].title = title;
+    setSurvey({ ...survey, categories: newCategories });
+  };
+
+  const updateCategoryDescription = (
+    categoryIndex: number, 
+    description: string, 
+    dragOffset?: number
+  ) => {
+    const newCategories = structuredClone(survey.categories);
+    
+    if (dragOffset !== undefined) {
+      const targetIndex = clamp(
+        Math.round(categoryIndex + dragOffset), 
+        0, 
+        newCategories.length - 1
+      );
+      const item = newCategories[categoryIndex];
+      newCategories.splice(categoryIndex, 1);
+      newCategories.splice(targetIndex, 0, item);
+    } else {
+      newCategories[categoryIndex].description = description;
+    }
+    
     setSurvey({ ...survey, categories: newCategories });
   };
 
@@ -185,13 +208,23 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
     setActiveQuestion(0);
   };
 
-  const removeCategory = (categoryIndex: number) => {
+  const removeCategory = async (categoryIndex: number) => {
     if (survey.categories.length > 1) {
       const newCategories = [...survey.categories];
+      const categoryToRemove = newCategories[categoryIndex];
       newCategories.splice(categoryIndex, 1);
       setSurvey({ ...survey, categories: newCategories });
       setActiveCategory(Math.min(categoryIndex, newCategories.length - 1));
       setActiveQuestion(0);
+
+      // Save to database
+      fetcher.submit(
+        { categoryId: categoryToRemove.id },
+        { 
+          method: "delete", 
+          action: `/api/survey/${surveyId}/category`
+        }
+      );
     }
   };
 
@@ -282,6 +315,13 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
     }));
   };
 
+  const handleCategoriesReorder = (newOrder: Category[]) => {
+    setSurvey(prev => ({
+      ...prev,
+      categories: newOrder
+    }));
+  };
+
   return (
     <div className="h-screen flex flex-col">
       <SurveyHeader 
@@ -302,27 +342,31 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
               setActiveCategory={setActiveCategory}
               setActiveQuestion={setActiveQuestion}
               updateCategoryTitle={updateCategoryTitle}
+              updateCategoryDescription={updateCategoryDescription}
               duplicateCategory={duplicateCategory}
               removeCategory={removeCategory}
               addCategory={addCategory}
+              onReorder={handleCategoriesReorder}
             />
 
             <div className="flex-1 overflow-y-auto p-4">
-              <CategoryQuestions
-                questions={survey.categories[activeCategory].questions}
-                activeCategory={activeCategory}
-                onReorder={(newOrder) => handleQuestionsReorder(activeCategory, newOrder)}
-                updateQuestionTitle={updateQuestionTitle}
-                updateQuestionType={updateQuestionType}
-                updateOption={updateOption}
-                addOption={addOption}
-                removeOption={removeOption}
-                removeQuestion={removeQuestion}
-                duplicateQuestion={duplicateQuestion}
-                updateScaleStart={updatescale_start}
-                updateScaleEnd={updatescale_end}
-                updateScaleLabel={updateScaleLabel}
-              />
+              {activeCategory !== null && (
+                <CategoryQuestions
+                  questions={survey.categories[activeCategory].questions}
+                  activeCategory={activeCategory}
+                  onReorder={(newOrder) => handleQuestionsReorder(activeCategory, newOrder)}
+                  updateQuestionTitle={updateQuestionTitle}
+                  updateQuestionType={updateQuestionType}
+                  updateOption={updateOption}
+                  addOption={addOption}
+                  removeOption={removeOption}
+                  removeQuestion={removeQuestion}
+                  duplicateQuestion={duplicateQuestion}
+                  updateScaleStart={updatescale_start}
+                  updateScaleEnd={updatescale_end}
+                  updateScaleLabel={updateScaleLabel}
+                />
+              )}
 
               <motion.button
                 onClick={() => addQuestion(activeCategory)}

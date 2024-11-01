@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 
+import { Question } from "~/models/survey";
+
 interface QuestionTypeSelectorProps {
-  value: 'multiple_choice' | 'free_text' | 'linear_scale';
-  onChange: (type: 'multiple_choice' | 'free_text' | 'linear_scale') => void;
+  value: Question['type'];
+  onChange: (type: Question['type']) => void;
 }
 
 export function QuestionTypeSelector({ value, onChange }: QuestionTypeSelectorProps) {
