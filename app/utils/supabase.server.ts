@@ -1,11 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { getEnv } from './env.server';
 
-let _supabaseClient: ReturnType<typeof createClient> | null = null;
-
 export function getSupabaseClient(context: any) {
-  if (_supabaseClient) return _supabaseClient;
-
   const env = getEnv(context);
   
   if (!env?.SUPABASE_URL || !env?.SUPABASE_ANON_KEY) {
@@ -13,7 +9,8 @@ export function getSupabaseClient(context: any) {
     throw new Error('Missing Supabase configuration');
   }
 
-  _supabaseClient = createClient(
+  // Create a new client instance for each request
+  return createClient(
     env.SUPABASE_URL,
     env.SUPABASE_ANON_KEY,
     {
@@ -22,6 +19,4 @@ export function getSupabaseClient(context: any) {
       }
     }
   );
-
-  return _supabaseClient;
 }

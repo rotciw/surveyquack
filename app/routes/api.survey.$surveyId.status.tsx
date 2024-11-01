@@ -1,7 +1,7 @@
 import type { LoaderFunction } from "@remix-run/cloudflare";
 import { getSupabaseClient } from "~/utils/supabase.server";
 
-export const loader: LoaderFunction = async ({ request, params, context }) => {
+export const loader: LoaderFunction = async ({ params, context }) => {
   const { surveyId } = params;
   const supabase = getSupabaseClient(context);
 
@@ -22,12 +22,10 @@ export const loader: LoaderFunction = async ({ request, params, context }) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(status)}\n\n`));
       };
 
-      // Send initial status
       if (survey?.status) {
         sendStatus(survey.status as string);
       }
 
-      // Subscribe to changes
       const subscription = supabase
         .channel(`survey-status-${surveyId}`)
         .on('postgres_changes', {
@@ -42,7 +40,6 @@ export const loader: LoaderFunction = async ({ request, params, context }) => {
         })
         .subscribe();
 
-      // Keep connection alive
       const keepalive = setInterval(() => {
         controller.enqueue(encoder.encode(": keepalive\n\n"));
       }, 15000);
