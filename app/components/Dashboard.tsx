@@ -1,18 +1,46 @@
 import { Link } from "@remix-run/react";
 import type { Survey } from "~/models/survey";
+import { useState } from "react";
+import { useFetcher } from "@remix-run/react";
+import { CreateSurveyModal } from "~/components/CreateSurveyModal";
 
 export function Dashboard({ surveys }: { surveys: Survey[] }) {
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const fetcher = useFetcher();
+
+  const handleCreateSurvey = () => {
+    const initialSurvey = {
+      title: "Untitled Survey",
+      description: "",
+      status: "draft",
+      categories: [{
+        title: "Untitled Category",
+        questions: [{
+          title: "Untitled Question",
+          type: "multiple_choice",
+          options: ["Option 1"]
+        }]
+      }]
+    };
+
+    fetcher.submit(
+      { survey: JSON.stringify(initialSurvey) },
+      { method: "post", action: "/api/surveys" }
+    );
+    setShowCreateModal(false);
+  };
+
   if (!surveys || surveys.length === 0) {
     return (
       <div className="container mx-auto p-4 text-center">
         <h1 className="text-2xl font-bold mb-6">Welcome to Survey Creator</h1>
         <p className="text-gray-600 mb-8">You haven't created any surveys yet. Get started by creating your first survey!</p>
-        <Link
-          to="/create"
-          className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-orange-500 hover:bg-orange-600"
         >
           Create Your First Survey
-        </Link>
+        </button>
       </div>
     );
   }
@@ -21,14 +49,20 @@ export function Dashboard({ surveys }: { surveys: Survey[] }) {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Your Surveys</h1>
-        <Link
-          to="/create"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-500 hover:bg-orange-600"
         >
           Create New Survey
-        </Link>
+        </button>
       </div>
       
+      <CreateSurveyModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onConfirm={handleCreateSurvey}
+      />
+
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">

@@ -3,8 +3,9 @@ import { GoogleStrategy } from "remix-auth-google";
 import { getSessionStorage } from "./session.server";
 import type { AppLoadContext } from "@remix-run/cloudflare";
 import { getEnv } from "./env.server";
+import { User } from "@supabase/supabase-js";
 
-export function getAuthenticator(context: AppLoadContext) {
+export function getAuthenticator(context: AppLoadContext): Authenticator<User> {
   const authenticator = new Authenticator(getSessionStorage(context));
   const env = getEnv(context);
   const googleStrategy = new GoogleStrategy(

@@ -33,7 +33,7 @@ export function Header({ user }: HeaderProps) {
           <div className="flex items-center">
             <Link to="/dashboard" className="flex items-center">
               <span className="text-2xl text-orange-500 font-bold">🦆</span>
-              <span className="ml-2 text-gray-900 font-semibold">DuckSurveys</span>
+              <span className="ml-2 text-gray-900 font-semibold">SurveyQuack</span>
             </Link>
             <nav className="hidden md:ml-8 md:flex space-x-2">
               <Link
@@ -41,12 +41,6 @@ export function Header({ user }: HeaderProps) {
                 className={getLinkStyles('/dashboard')}
               >
                 Dashboard
-              </Link>
-              <Link
-                to="/create"
-                className={getLinkStyles('/create')}
-              >
-                Create Survey
               </Link>
             </nav>
           </div>
