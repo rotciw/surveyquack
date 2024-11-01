@@ -343,37 +343,32 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
       <div className="flex">
         <div className="w-1/4 pr-4 border-r">
           {survey.categories?.map((category, index) => (
-            <div
-              key={category.id}
-              className={`p-2 mb-2 cursor-pointer rounded ${
-                index === activeCategory ? 'bg-indigo-100' : 'hover:bg-gray-100'
-              }`}
-              onClick={() => {
-                setActiveCategory(index);
-                setActiveQuestion(0);
-              }}
-            >
-              <span>{category.title}</span>
-              {survey.categories.length > 1 && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeCategory(index);
-                  }}
-                  className="ml-2 text-red-500 hover:text-red-700"
-                >
-                  ×
-                </button>
-              )}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  duplicateCategory(index);
+            <div key={category.id}>
+              <div
+                className={`p-2 mb-2 cursor-pointer rounded ${
+                  index === activeCategory ? 'bg-indigo-100' : 'hover:bg-gray-100'
+                }`}
+                onClick={() => {
+                  setActiveCategory(index);
+                  setActiveQuestion(0);
                 }}
-                className="ml-2 text-blue-500 hover:text-blue-700"
               >
-                Copy
-              </button>
+                <span>{category.title}</span>
+                <textarea
+                  className="mt-2 w-full p-2 text-sm border rounded"
+                  placeholder="Add category description (optional)"
+                  value={category.description || ''}
+                  onChange={(e) => {
+                    const newCategories = [...survey.categories];
+                    newCategories[index] = {
+                      ...newCategories[index],
+                      description: e.target.value
+                    };
+                    setSurvey({ ...survey, categories: newCategories });
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
             </div>
           ))}
           <button

@@ -240,10 +240,19 @@ export function SurveyTaker({
           <motion.h2 
             initial={{ x: -20 }}
             animate={{ x: 0 }}
-            className="text-2xl font-semibold mb-8 text-gray-800"
+            className="text-2xl font-semibold mb-2 text-gray-800"
           >
             {category.title}
           </motion.h2>
+          {category.description && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-gray-600 mb-8"
+            >
+              {category.description}
+            </motion.p>
+          )}
 
           {category.questions.map((question, questionIndex) => (
             <motion.div

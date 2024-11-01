@@ -47,6 +47,7 @@ export const loader: LoaderFunction = async ({ request, params, context }) => {
     .select(`
       id, 
       title,
+      description,
       questions (id, title, type, options, scale_start, scale_end, scale_left_label, scale_right_label)
     `)
     .eq('survey_id', surveyId);

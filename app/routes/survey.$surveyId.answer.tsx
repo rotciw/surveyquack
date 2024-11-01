@@ -31,7 +31,7 @@ export const loader: LoaderFunction = async ({ params, context, request }) => {
 
     const { data: categories, error: categoriesError } = await supabase
       .from('categories')
-      .select('id, title, questions(id, title, subtitle, type, options, scale_start, scale_end, scale_left_label, scale_right_label)')
+      .select('id, title, description,questions(id, title, subtitle, type, options, scale_start, scale_end, scale_left_label, scale_right_label)')
       .eq('survey_id', surveyId);
 
     if (categoriesError) {

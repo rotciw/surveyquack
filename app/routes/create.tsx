@@ -22,6 +22,7 @@ export default function CreateSurvey() {
   const initialSurvey = {
     id: "",
     title: "Untitled Survey",
+    description: "",
     user_id: user.id,
     status: "draft" as const,
     categories: [

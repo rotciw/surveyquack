@@ -43,7 +43,8 @@ export const action: ActionFunction = async ({ request, params, context }) => {
       .upsert({
         id: category.id,
         survey_id: surveyId,
-        title: category.title
+        title: category.title,
+        description: category.description,
       });
 
     if (categoryError) throw new Error(categoryError.message);
