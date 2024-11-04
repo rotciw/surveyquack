@@ -41,7 +41,7 @@ export default function Index() {
           <div className="mt-10 flex justify-center gap-4">
             {user ? (
               <Link
-                to="/create"
+                to="/dashboard"
                 className="px-8 py-4 bg-orange-500 text-white rounded-full font-medium hover:bg-orange-600 transition-colors"
               >
                 Hatch Your Survey
