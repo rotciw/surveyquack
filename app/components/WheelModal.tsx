@@ -11,15 +11,15 @@ interface WheelModalProps {
 export function WheelModal({ isOpen, onClose, onResult }: WheelModalProps) {
   const [prize, setPrize] = useState<{ name: string; color: string } | null>(null);
 
-  const handleWheelResult = (isWin: boolean) => {
+  const handleResult = (isWin: boolean) => {
     setPrize({
-      name: isWin ? "10% OFF your next purchase!" : "Better luck next time!",
+      name: isWin ? "You Won!" : "Try Again",
       color: isWin ? "#36A2EB" : "#FF6384"
     });
+    onResult(isWin);
   };
 
   const handleClose = () => {
-    onResult(prize?.color === "#36A2EB");
     onClose();
   };
 
@@ -50,7 +50,7 @@ export function WheelModal({ isOpen, onClose, onResult }: WheelModalProps) {
               </div>
 
               {!prize ? (
-                <LuckyWheel onResult={handleWheelResult} />
+                <LuckyWheel onResult={handleResult} />
               ) : (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}

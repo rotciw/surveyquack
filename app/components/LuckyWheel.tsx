@@ -36,11 +36,15 @@ export function LuckyWheel({ onResult }: LuckyWheelProps) {
     const isWin = segments[selectedIndex].isWin;
     
     // Calculate the rotation needed to land on the selected segment
-    // Add 360 * 5 for multiple spins and adjust for the pointer at top
-    const rotation = -(selectedIndex * segmentAngle) + 360 * 5 + segmentAngle / 2;
+    // The pointer is at top (0 degrees), so we need to rotate to bring the selected segment to top
+    const baseRotation = selectedIndex * segmentAngle;
+    // Add extra full rotations for spinning effect
+    const extraRotations = 360 * 5;
+    // Final rotation should point to the middle of the segment
+    const finalRotation = baseRotation + extraRotations;
 
     await controls.start({
-      rotate: rotation,
+      rotate: finalRotation,
       transition: {
         duration: 4,
         ease: "easeOut"
