@@ -33,7 +33,7 @@ export default function Index() {
             <span className="text-orange-500">QUACK!</span>
           </h1>
           <p className="mt-6 text-xl text-gray-500 max-w-3xl mx-auto">
-            Just another survey tool - but with feedback collection, real-time category control 
+            Just another survey tool - but with real-time category control, feedback collection 
             and rewarding interactions! 🦆
           </p>
           
