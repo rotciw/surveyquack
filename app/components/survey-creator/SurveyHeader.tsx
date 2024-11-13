@@ -1,4 +1,6 @@
 import { Survey } from "~/models/survey";
+import { QRCodeSVG } from 'qrcode.react';
+import { useState, useRef } from 'react';
 
 interface SurveyHeaderProps {
   survey: Survey;
@@ -17,6 +19,43 @@ export function SurveyHeader({
   onSave,
   isSaving 
 }: SurveyHeaderProps) {
+  const [showQR, setShowQR] = useState(false);
+  const qrRef = useRef<HTMLDivElement>(null);
+
+  const downloadQRCode = () => {
+    if (!qrRef.current) return;
+    
+    // Create a canvas element
+    const canvas = document.createElement("canvas");
+    const svg = qrRef.current.querySelector("svg");
+    const svgData = new XMLSerializer().serializeToString(svg!);
+    const img = new Image();
+    
+    // Convert SVG to data URL
+    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      
+      // Create download link
+      const link = document.createElement("a");
+      link.download = `${survey.title}-qr-code.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      
+      // Cleanup
+      URL.revokeObjectURL(svgUrl);
+    };
+    
+    img.src = svgUrl;
+  };
+
   return (
     <div className="bg-gray-50 border-b px-4 py-3">
       <div className="max-w-[1600px] mx-auto grid grid-cols-2 gap-4">
@@ -45,10 +84,59 @@ export function SurveyHeader({
                 <button
                   onClick={() => navigator.clipboard.writeText(uniqueUrl)}
                   className="text-blue-500 hover:text-blue-600 p-2 flex-shrink-0"
+                  title="Copy URL"
                 >
                   📋
                 </button>
+                <button
+                  onClick={() => setShowQR(!showQR)}
+                  className="text-blue-500 hover:text-blue-600 p-2 flex-shrink-0"
+                  title="Show QR Code"
+                >
+                  📱
+                </button>
               </div>
+              {/* QR Code Modal */}
+              {showQR && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white p-6 rounded-lg shadow-xl">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold">Scan QR Code</h3>
+                      <button 
+                        onClick={() => setShowQR(false)}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div ref={qrRef} className="bg-white p-4">
+                      <QRCodeSVG 
+                        value={uniqueUrl} 
+                        size={256}
+                        level="H"
+                        marginSize={1}
+                      />
+                    </div>
+                    <div className="mt-4 flex justify-center gap-4">
+                      <button
+                        onClick={downloadQRCode}
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex items-center gap-2"
+                      >
+                        <span>💾</span> Save QR Code
+                      </button>
+                      <button
+                        onClick={() => setShowQR(false)}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <p className="mt-4 text-sm text-gray-600 text-center">
+                      Scan this code to access the survey 
+                    </p>
+                  </div>
+                </div>
+              )}
               <a
                 href={uniqueUrl}
                 target="_blank"
