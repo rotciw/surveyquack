@@ -50,7 +50,10 @@ export function SurveyTaker({
     initialIsSubmitted ? 'submitted' : null
   );
   const [isSubmitted, setIsSubmitted] = useState(initialIsSubmitted);
-  const [showWheel, setShowWheel] = useState(false);
+  const [showWheel, setShowWheel] = useState(
+    isLastCategory(initialSurvey.active_category || undefined, initialSurvey.categories) && 
+    initialIsSubmitted
+  );
   const fetcher = useFetcher();
   const [categorySubmissions, setCategorySubmissions] = useState(initialCategorySubmissions);
   
@@ -159,12 +162,9 @@ export function SurveyTaker({
     event.preventDefault();
     
     if (!activeCategory) return;
-    
-    // Prevent double submission
     if (fetcher.state === 'submitting') return;
 
     try {
-      // Get all answers for current category
       const categoryAnswers = answers.filter(answer => {
         const question = survey.categories
           .find(c => c.id === activeCategory)
@@ -172,7 +172,6 @@ export function SurveyTaker({
         return question !== undefined;
       });
 
-      // Submit answers directly using fetcher
       fetcher.submit(
         {
           answers: JSON.stringify(categoryAnswers)
@@ -180,7 +179,6 @@ export function SurveyTaker({
         { 
           method: "post",
           action: `/api/survey/${survey.id}/submit-answers`,
-          // Explicitly set headers for Safari
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
           }
@@ -189,7 +187,13 @@ export function SurveyTaker({
 
       // Update local state
       setCategorySubmissions(prev => [...prev, activeCategory]);
+      setIsSubmitted(true);
       setSaveStatus('submitted');
+      
+      // Show wheel immediately if it's the last category
+      if (isLastCategory(activeCategory, survey.categories)) {
+        setTimeout(() => setShowWheel(true), 1000);
+      }
     } catch (error) {
       console.error('Submit error:', error);
     }
@@ -303,11 +307,16 @@ export function SurveyTaker({
         </div>
       )}
 
-      {isSubmitted && showWheel && (
+      {isLastCategory(activeCategory || undefined, survey.categories) && 
+       categorySubmissions.includes(activeCategory || '') && (
         <WheelModal
           isOpen={showWheel}
-          onClose={() => setShowWheel(false)}
-          onResult={() => {setShowWheel(false)}}
+          onClose={() => {
+            setShowWheel(false);
+          }}
+          onResult={(prize) => {
+            console.log('Won prize:', prize);
+          }}
         />
       )}
 
