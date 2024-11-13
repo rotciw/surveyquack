@@ -155,18 +155,44 @@ export function SurveyTaker({
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    
     if (!activeCategory) return;
     
-    setSaveStatus('saving');
-    
-    fetcher.submit(
-      { categoryId: activeCategory },
-      { method: "post", action: `/api/survey/${survey.id}/submit-category` }
-    );
+    // Prevent double submission
+    if (fetcher.state === 'submitting') return;
 
-    // Keep the submitted state
-    setSaveStatus('submitted');
+    try {
+      // Get all answers for current category
+      const categoryAnswers = answers.filter(answer => {
+        const question = survey.categories
+          .find(c => c.id === activeCategory)
+          ?.questions.find(q => q.id === answer.questionId);
+        return question !== undefined;
+      });
+
+      // Submit answers directly using fetcher
+      fetcher.submit(
+        {
+          answers: JSON.stringify(categoryAnswers)
+        },
+        { 
+          method: "post",
+          action: `/api/survey/${survey.id}/submit-answers`,
+          // Explicitly set headers for Safari
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          }
+        }
+      );
+
+      // Update local state
+      setCategorySubmissions(prev => [...prev, activeCategory]);
+      setSaveStatus('submitted');
+    } catch (error) {
+      console.error('Submit error:', error);
+    }
   };
 
   const categoriesToShow = survey.categories.filter(category => {
