@@ -15,13 +15,26 @@ export function SurveyStatistics({ survey, responses, selectedCategoryId }: Surv
   const contentRef = useRef<HTMLDivElement>(null);
 
   const stats = useMemo(() => {
-    const uniqueRespondents = new Set(responses.map(r => r.taker_id)).size;
+    // Filter responses by selected category if one is selected
+    const relevantResponses = selectedCategoryId 
+      ? responses.filter(r => 
+          survey.categories
+            .find(c => c.id === selectedCategoryId)
+            ?.questions.some(q => q.id === r.question_id)
+        )
+      : responses;
+
+    const uniqueRespondents = new Set(relevantResponses.map(r => r.taker_id)).size;
     
-    // Calculate response rate per question
-    const questionResponseRates = survey.categories.flatMap(cat => 
+    // Calculate response rate per question for relevant category/categories
+    const categoriesToConsider = selectedCategoryId 
+      ? survey.categories.filter(c => c.id === selectedCategoryId)
+      : survey.categories;
+
+    const questionResponseRates = categoriesToConsider.flatMap(cat => 
       cat.questions.map(q => {
         const questionResponses = new Set(
-          responses.filter(r => r.question_id === q.id).map(r => r.taker_id)
+          relevantResponses.filter(r => r.question_id === q.id).map(r => r.taker_id)
         ).size;
         return (questionResponses / uniqueRespondents) * 100;
       })
@@ -33,10 +46,10 @@ export function SurveyStatistics({ survey, responses, selectedCategoryId }: Surv
     
     return {
       uniqueRespondents,
-      totalResponses: responses.length,
+      totalResponses: relevantResponses.length,
       responseRate: responseRate.toFixed(1)
     };
-  }, [responses, survey]);
+  }, [responses, survey, selectedCategoryId]);
 
   const categoriesToShow = selectedCategoryId 
     ? survey.categories.filter(cat => cat.id === selectedCategoryId)
