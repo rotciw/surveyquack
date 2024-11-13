@@ -14,7 +14,7 @@ export function WheelModal({ isOpen, onClose, onResult }: WheelModalProps) {
 
   const handleResult = (isWin: boolean) => {
     setPrize({
-      name: isWin ? "You Won!" : "Next time!",
+      name: isWin ? "You Won!" : "This Quacks!",
       color: isWin ? "#36A2EB" : "#FF6384"
     });
     setHasSpun(true);

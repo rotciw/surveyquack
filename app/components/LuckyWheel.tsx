@@ -19,11 +19,11 @@ export function LuckyWheel({ onResult, hasSpun }: LuckyWheelProps) {
 
   const segments: WheelSegment[] = [
     { name: "WIN!", isWin: true, color: "#36A2EB", probability: 10 },
-    { name: "Next time!", isWin: false, color: "#FF6384", probability: 90 },
+    { name: "🙂", isWin: false, color: "#FF6384", probability: 90 },
     { name: "WIN!", isWin: true, color: "#36A2EB", probability: 10 },
-    { name: "Next time!", isWin: false, color: "#FF6384", probability: 90 },
+    { name: "🙂", isWin: false, color: "#FF6384", probability: 90 },
     { name: "WIN!", isWin: true, color: "#36A2EB", probability: 10 },
-    { name: "Next time!", isWin: false, color: "#FF6384", probability: 90 },
+    { name: "🙂", isWin: false, color: "#FF6384", probability: 90 },
   ];
 
   const segmentAngle = 360 / segments.length;

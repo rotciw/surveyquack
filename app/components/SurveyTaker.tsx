@@ -184,7 +184,9 @@ export function SurveyTaker({
 
       // Only show wheel when submitting the last category
       if (isLastCategory(activeCategory, survey.categories)) {
-        setShowWheel(true);
+        setTimeout(() => {
+          setShowWheel(true);
+        }, 1000);
       }
     } catch (error) {
       console.error('Submit error:', error);
@@ -292,7 +294,7 @@ export function SurveyTaker({
         <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
           <p className="text-green-700">
             {isLastCategory(activeCategory || undefined, survey.categories) 
-              ? "Thank you for completing the survey! You'll now have a chance to spin the wheel."
+              ? "Thank you for completing the survey!"
               : "Your answers for this category have been submitted. Please wait for the survey administrator to activate the next category before continuing."
             }
           </p>
