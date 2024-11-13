@@ -115,12 +115,7 @@ export function SurveyTaker({
     if (fetcher.state === 'submitting') {
       setSaveStatus('saving');
     } else if (fetcher.state === 'idle' && saveStatus === 'saving') {
-      setSaveStatus('saved');
-      // Clear the saved status after a delay
-      const timer = setTimeout(() => {
-        setSaveStatus(null);
-      }, 2000);
-      return () => clearTimeout(timer);
+      setSaveStatus('submitted');
     }
   }, [fetcher.state, saveStatus]);
 
@@ -160,29 +155,18 @@ export function SurveyTaker({
     }
   };
 
-  const handleSubmit = () => {
-    if (window.confirm('Are you sure you want to submit your answers? You won\'t be able to change them after submission.')) {
-      fetcher.submit(
-        { answers: JSON.stringify(answers) },
-        { method: "post", action: `/api/survey/${survey.id}/submit-answers` }
-      );
+  const handleSubmit = async () => {
+    if (!activeCategory) return;
+    
+    setSaveStatus('saving');
+    
+    fetcher.submit(
+      { categoryId: activeCategory },
+      { method: "post", action: `/api/survey/${survey.id}/submit-category` }
+    );
 
-      // Watch for the response
-      if (fetcher.data && typeof fetcher.data === 'object' && 'error' in fetcher.data) {
-        alert(fetcher.data.error);
-        return;
-      }
-
-      if (activeCategory) {
-        setCategorySubmissions(prev => [...prev, activeCategory]);
-      }
-      setIsSubmitted(true);
-      setSaveStatus('submitted');
-      
-      if (isLastCategory(activeCategory || undefined, survey.categories)) {
-        setShowWheel(true);
-      }
-    }
+    // Keep the submitted state
+    setSaveStatus('submitted');
   };
 
   const categoriesToShow = survey.categories.filter(category => {
