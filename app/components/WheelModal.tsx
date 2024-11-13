@@ -10,12 +10,14 @@ interface WheelModalProps {
 
 export function WheelModal({ isOpen, onClose, onResult }: WheelModalProps) {
   const [prize, setPrize] = useState<{ name: string; color: string } | null>(null);
+  const [hasSpun, setHasSpun] = useState(false);
 
   const handleResult = (isWin: boolean) => {
     setPrize({
-      name: isWin ? "You Won!" : "Try Again",
+      name: isWin ? "You Won!" : "Next time!",
       color: isWin ? "#36A2EB" : "#FF6384"
     });
+    setHasSpun(true);
     onResult(isWin);
   };
 
@@ -51,7 +53,7 @@ export function WheelModal({ isOpen, onClose, onResult }: WheelModalProps) {
                   animate={prize ? { x: -20 } : { x: 0 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <LuckyWheel onResult={handleResult} />
+                  <LuckyWheel onResult={handleResult} hasSpun={hasSpun} />
                 </motion.div>
 
                 <AnimatePresence mode="wait">

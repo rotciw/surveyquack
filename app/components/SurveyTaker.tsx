@@ -50,10 +50,7 @@ export function SurveyTaker({
     initialIsSubmitted ? 'submitted' : null
   );
   const [isSubmitted, setIsSubmitted] = useState(initialIsSubmitted);
-  const [showWheel, setShowWheel] = useState(
-    isLastCategory(initialSurvey.active_category || undefined, initialSurvey.categories) && 
-    initialIsSubmitted
-  );
+  const [showWheel, setShowWheel] = useState(false);
   const fetcher = useFetcher();
   const [categorySubmissions, setCategorySubmissions] = useState(initialCategorySubmissions);
   
@@ -172,27 +169,22 @@ export function SurveyTaker({
         return question !== undefined;
       });
 
-      fetcher.submit(
+      await fetcher.submit(
         {
           answers: JSON.stringify(categoryAnswers)
         },
         { 
           method: "post",
-          action: `/api/survey/${survey.id}/submit-answers`,
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          }
+          action: `/api/survey/${survey.id}/submit-answers`
         }
       );
 
-      // Update local state
       setCategorySubmissions(prev => [...prev, activeCategory]);
       setIsSubmitted(true);
-      setSaveStatus('submitted');
-      
-      // Show wheel immediately if it's the last category
+
+      // Only show wheel when submitting the last category
       if (isLastCategory(activeCategory, survey.categories)) {
-        setTimeout(() => setShowWheel(true), 1000);
+        setShowWheel(true);
       }
     } catch (error) {
       console.error('Submit error:', error);

@@ -10,25 +10,26 @@ interface WheelSegment {
 
 interface LuckyWheelProps {
   onResult: (isWin: boolean) => void;
+  hasSpun: boolean;
 }
 
-export function LuckyWheel({ onResult }: LuckyWheelProps) {
+export function LuckyWheel({ onResult, hasSpun }: LuckyWheelProps) {
   const controls = useAnimationControls();
   const [isSpinning, setIsSpinning] = useState(false);
 
   const segments: WheelSegment[] = [
-    { name: "WIN!", isWin: true, color: "#36A2EB", probability: 30 },
-    { name: "Try Again", isWin: false, color: "#FF6384", probability: 70 },
-    { name: "WIN!", isWin: true, color: "#36A2EB", probability: 30 },
-    { name: "Try Again", isWin: false, color: "#FF6384", probability: 70 },
-    { name: "WIN!", isWin: true, color: "#36A2EB", probability: 30 },
-    { name: "Try Again", isWin: false, color: "#FF6384", probability: 70 },
+    { name: "WIN!", isWin: true, color: "#36A2EB", probability: 10 },
+    { name: "Next time!", isWin: false, color: "#FF6384", probability: 90 },
+    { name: "WIN!", isWin: true, color: "#36A2EB", probability: 10 },
+    { name: "Next time!", isWin: false, color: "#FF6384", probability: 90 },
+    { name: "WIN!", isWin: true, color: "#36A2EB", probability: 10 },
+    { name: "Next time!", isWin: false, color: "#FF6384", probability: 90 },
   ];
 
   const segmentAngle = 360 / segments.length;
 
   const spin = async () => {
-    if (isSpinning) return;
+    if (isSpinning || hasSpun) return;
     setIsSpinning(true);
 
     // Randomly select a segment
@@ -59,7 +60,7 @@ export function LuckyWheel({ onResult }: LuckyWheelProps) {
   };
 
   return (
-    <div className="relative w-96 h-96 mx-auto">
+    <div className="relative w-72 md:w-96 h-72 md:h-96 mx-auto">
       {/* Fixed pointer triangle at top */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 z-20">
         <div className="w-8 h-12 bg-gray-800 clip-arrow" />
@@ -118,10 +119,10 @@ export function LuckyWheel({ onResult }: LuckyWheelProps) {
 
       <button
         onClick={spin}
-        disabled={isSpinning}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-gray-800 text-white font-bold disabled:opacity-50"
+        disabled={isSpinning || hasSpun}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-gray-800 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        SPIN
+        {hasSpun ? "DONE" : "SPIN"}
       </button>
     </div>
   );
