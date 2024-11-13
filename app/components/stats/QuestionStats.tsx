@@ -60,13 +60,40 @@ export function QuestionStats({ question, responses }: QuestionStatsProps) {
       if (numericResponses.length === 0) return null;
 
       const average = numericResponses.reduce((a, b) => a + b, 0) / numericResponses.length;
-      const mode = numericResponses.sort((a,b) =>
-        numericResponses.filter(v => v === a).length - numericResponses.filter(v => v === b).length
-      ).pop();
+      
+      // Find all modes (most common values)
+      const counts = numericResponses.reduce((acc, val) => {
+        acc[val] = (acc[val] || 0) + 1;
+        return acc;
+      }, {} as Record<number, number>);
+      
+      const maxCount = Math.max(...Object.values(counts));
+      const modes = Object.entries(counts)
+        .filter(([, count]) => count === maxCount)
+        .map(([value]) => value)
+        .join(', ');
 
       return {
         average: average.toFixed(1),
-        mode: mode,
+        mode: modes,
+        total: responses.length
+      };
+    }
+
+    if (question.type === 'multiple_choice') {
+      const answerCounts = responses.reduce((acc, r) => {
+        acc[r.answer_value] = (acc[r.answer_value] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const maxCount = Math.max(...Object.values(answerCounts));
+      const modes = Object.entries(answerCounts)
+        .filter(([, count]) => count === maxCount)
+        .map(([value]) => value)
+        .join(', ');
+
+      return {
+        mode: modes || 'None',
         total: responses.length
       };
     }
@@ -96,14 +123,21 @@ export function QuestionStats({ question, responses }: QuestionStatsProps) {
         <>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
+              <BarChart data={data} margin={{ bottom: 30 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="name" 
                   angle={-45}
                   textAnchor="end"
-                  height={70}
+                  height={30}
                   interval={0}
+                  label={
+                    question.type === 'linear_scale' ? {
+                      value: `${question.scale_left_label} ← → ${question.scale_right_label}`,
+                      position: 'bottom',
+                      offset: 10
+                    } : undefined
+                  }
                 />
                 <YAxis />
                 <Tooltip />
@@ -115,12 +149,14 @@ export function QuestionStats({ question, responses }: QuestionStatsProps) {
             </ResponsiveContainer>
           </div>
 
-          {stats  && (
-            <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-sm text-gray-500">Average</p>
-                <p className="text-lg font-semibold">{stats.average}</p>
-              </div>
+          {stats && (
+            <div className={`mt-4 grid ${question.type === 'linear_scale' ? 'grid-cols-3' : 'grid-cols-2'} gap-4 text-center`}>
+              {question.type === 'linear_scale' && (
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-sm text-gray-500">Average</p>
+                  <p className="text-lg font-semibold">{stats.average}</p>
+                </div>
+              )}
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-sm text-gray-500">Most Common</p>
                 <p className="text-lg font-semibold">{stats.mode}</p>
@@ -148,13 +184,6 @@ export function QuestionStats({ question, responses }: QuestionStatsProps) {
               </div>
             ))
           )}
-        </div>
-      )}
-
-      {question.type === 'linear_scale' && (
-        <div className="mt-4 text-sm text-gray-500 flex justify-between">
-          <span>{question.scale_left_label}</span>
-          <span>{question.scale_right_label}</span>
         </div>
       )}
     </motion.div>
