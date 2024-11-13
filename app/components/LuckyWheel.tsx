@@ -32,10 +32,18 @@ export function LuckyWheel({ onResult, hasSpun }: LuckyWheelProps) {
     if (isSpinning || hasSpun) return;
     setIsSpinning(true);
 
-    // Randomly select a segment
-    const selectedIndex = Math.floor(Math.random() * segments.length);
-    const isWin = segments[selectedIndex].isWin;
-    
+    // First determine if it's a win with 10% probability
+    const isWin = Math.random() < 0.1;
+
+    // Get indices of all segments that match our win/lose condition
+    const matchingIndices = segments
+      .map((segment, index) => ({ segment, index }))
+      .filter(({ segment }) => segment.isWin === isWin)
+      .map(({ index }) => index);
+
+    // Select a random index from the matching segments
+    const selectedIndex = matchingIndices[Math.floor(Math.random() * matchingIndices.length)];
+
     // Calculate the rotation needed to land on the selected segment
     // The pointer is at top (0 degrees), so we need to rotate to bring the selected segment to top
     const baseRotation = selectedIndex * segmentAngle;
