@@ -28,7 +28,24 @@ export const action: ActionFunction = async ({ request, params, context }) => {
     const categoryId = formData.get("categoryId") as string;
     const supabase = getSupabaseClient(context);
 
-    // First delete all questions in the category
+    // Check if the category is the active category
+    const { data: survey, error: surveyError } = await supabase
+      .from('surveys')
+      .select('active_category')
+      .eq('id', surveyId)
+      .single();
+
+    if (surveyError) throw new Error(surveyError.message);
+
+    // If the category is active, update the active_category to null or another category
+    if (survey.active_category === categoryId) {
+      await supabase
+        .from('surveys')
+        .update({ active_category: null }) // or set to another category ID
+        .eq('id', surveyId);
+    }
+
+    // Now delete the questions and the category
     const { error: questionsError } = await supabase
       .from('questions')
       .delete()
@@ -36,7 +53,6 @@ export const action: ActionFunction = async ({ request, params, context }) => {
 
     if (questionsError) throw new Error(questionsError.message);
 
-    // Then delete the category
     const { error: categoryError } = await supabase
       .from('categories')
       .delete()

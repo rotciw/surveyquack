@@ -154,11 +154,13 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
 
   const addQuestion = (categoryIndex: number) => {
     const newCategories = [...survey.categories];
+    const currentQuestions = newCategories[categoryIndex].questions;
     newCategories[categoryIndex].questions.push({
       id: crypto.randomUUID(),
       title: "Untitled Question",
       type: "multiple_choice",
       options: ["Option 1"],
+      order: currentQuestions.length
     });
     setSurvey({ ...survey, categories: newCategories });
     setActiveQuestion(newCategories[categoryIndex].questions.length - 1);
@@ -168,6 +170,10 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
     if (survey.categories[categoryIndex].questions.length > 1) {
       const newCategories = [...survey.categories];
       newCategories[categoryIndex].questions.splice(questionIndex, 1);
+      newCategories[categoryIndex].questions = newCategories[categoryIndex].questions.map((q, i) => ({
+        ...q,
+        order: i
+      }));
       setSurvey({ ...survey, categories: newCategories });
       setActiveQuestion(Math.min(questionIndex, newCategories[categoryIndex].questions.length - 1));
     }
@@ -179,8 +185,15 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
     const newQuestion: Question = {
       ...questionToDuplicate,
       id: crypto.randomUUID(),
+      order: questionIndex + 1
     };
+    
     newCategories[categoryIndex].questions.splice(questionIndex + 1, 0, newQuestion);
+    newCategories[categoryIndex].questions = newCategories[categoryIndex].questions.map((q, i) => ({
+      ...q,
+      order: i
+    }));
+    
     setSurvey({ ...survey, categories: newCategories });
     setActiveQuestion(questionIndex + 1);
   };
@@ -199,6 +212,7 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
               title: "Untitled Question",
               type: "multiple_choice",
               options: ["Option 1"],
+              order: 0
             },
           ],
         },

@@ -48,9 +48,10 @@ export const action: ActionFunction = async ({ request, context }) => {
       if (categoryError) throw categoryError;
 
       // Create questions for this category
-      const questionsWithCategoryId = category.questions.map((question: Question) => ({
+      const questionsWithCategoryId = category.questions.map((question: Question, index: number) => ({
         ...question,
-        category_id: newCategory.id
+        category_id: newCategory.id,
+        order: index
       }));
 
       const { error: questionsError } = await supabase

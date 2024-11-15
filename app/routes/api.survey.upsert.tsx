@@ -78,7 +78,11 @@ export const action: ActionFunction = async ({ request, context }) => {
       for (const question of category.questions) {
         await supabase
           .from('questions')
-          .insert({ ...question, category_id: categoryData.id });
+          .insert({ 
+            ...question, 
+            category_id: categoryData.id,
+            order: category.questions.indexOf(question)
+          });
       }
     }
   }

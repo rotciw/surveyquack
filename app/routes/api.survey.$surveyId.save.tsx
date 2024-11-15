@@ -60,6 +60,7 @@ export const action: ActionFunction = async ({ request, params, context }) => {
           subtitle: question.subtitle,
           type: question.type,
           options: question.options,
+          order: question.order,
           scale_start: question.type === 'linear_scale' ? question.scale_start : null,
           scale_end: question.type === 'linear_scale' ? question.scale_end : null,
           scale_left_label: question.type === 'linear_scale' ? question.scale_left_label : null,

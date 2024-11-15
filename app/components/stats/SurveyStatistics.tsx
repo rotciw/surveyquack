@@ -13,7 +13,7 @@ interface SurveyStatisticsProps {
 
 export function SurveyStatistics({ survey, responses, selectedCategoryId }: SurveyStatisticsProps) {
   const contentRef = useRef<HTMLDivElement>(null);
-
+  console.log(survey.categories);
   const stats = useMemo(() => {
     // Filter responses by selected category if one is selected
     const relevantResponses = selectedCategoryId 
@@ -120,13 +120,15 @@ export function SurveyStatistics({ survey, responses, selectedCategoryId }: Surv
             >
               <h2 className="text-xl font-semibold mb-4">{category.title}</h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {category.questions.map(question => (
-                  <QuestionStats
-                    key={question.id}
-                    question={question}
-                    responses={responses.filter(r => r.question_id === question.id)}
-                  />
-                ))}
+                {category.questions
+                  .sort((a, b) => a.order - b.order)
+                  .map(question => (
+                    <QuestionStats
+                      key={question.id}
+                      question={question}
+                      responses={responses.filter(r => r.question_id === question.id)}
+                    />
+                  ))}
               </div>
             </motion.div>
           ))}

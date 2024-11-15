@@ -24,11 +24,19 @@ export function CategoryQuestions({
   onReorder,
   ...questionEditorProps 
 }: CategoryQuestionsProps) {
+  const handleReorder = (newOrder: Question[]) => {
+    const updatedOrder = newOrder.map((question, index) => ({
+      ...question,
+      order: index
+    }));
+    onReorder(updatedOrder);
+  };
+
   return (
     <Reorder.Group 
       axis="y" 
       values={questions} 
-      onReorder={onReorder}
+      onReorder={handleReorder}
       className="space-y-4"
     >
       {questions.map((question, index) => (

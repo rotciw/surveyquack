@@ -28,6 +28,7 @@ export interface Category {
 
 export interface Question {
   id: string;
+  order: number;
   title: string;
   subtitle?: string;
   type: 'multiple_choice' | 'free_text' | 'linear_scale';
