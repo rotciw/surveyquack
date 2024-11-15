@@ -61,6 +61,22 @@ export const action: ActionFunction = async ({ request, params, context }) => {
 
     if (categoryError) throw new Error(categoryError.message);
     
+    // After deleting the category, update orders of remaining categories
+    const { data: remainingCategories } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('survey_id', surveyId)
+      .order('order');
+
+    if (remainingCategories) {
+      for (let i = 0; i < remainingCategories.length; i++) {
+        await supabase
+          .from('categories')
+          .update({ order: i })
+          .eq('id', remainingCategories[i].id);
+      }
+    }
+
     return json({ success: true });
   }
   

@@ -32,12 +32,19 @@ export const action: ActionFunction = async ({ request, context }) => {
       if (category.id) {
         await supabase
           .from('categories')
-          .update({ title: category.title })
+          .update({ 
+            title: category.title,
+            order: surveyData.categories.indexOf(category)
+          })
           .eq('id', category.id);
       } else {
         await supabase
           .from('categories')
-          .insert({ title: category.title, survey_id: surveyData.id });
+          .insert({ 
+            title: category.title, 
+            survey_id: surveyData.id,
+            order: surveyData.categories.indexOf(category)
+          });
       }
 
       // Update or insert questions

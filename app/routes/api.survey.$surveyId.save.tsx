@@ -45,6 +45,7 @@ export const action: ActionFunction = async ({ request, params, context }) => {
         survey_id: surveyId,
         title: category.title,
         description: category.description,
+        order: surveyData.categories.indexOf(category)
       });
 
     if (categoryError) throw new Error(categoryError.message);

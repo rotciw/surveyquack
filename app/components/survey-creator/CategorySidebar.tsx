@@ -27,6 +27,14 @@ export function CategorySidebar({
   addCategory,
   onReorder
 }: CategorySidebarProps) {
+  const handleReorder = (newOrder: Category[]) => {
+    const updatedOrder = newOrder.map((category, index) => ({
+      ...category,
+      order: index
+    }));
+    onReorder(updatedOrder);
+  };
+
   return (
     <div className="w-96 border-r bg-gray-50 flex flex-col">
       <div className="p-4">
@@ -34,7 +42,7 @@ export function CategorySidebar({
         <Reorder.Group 
           axis="y" 
           values={categories} 
-          onReorder={onReorder}
+          onReorder={handleReorder}
           className="space-y-3 max-h-[calc(100vh-200px)] overflow-y-auto pr-2"
         >
           {categories?.map((category, index) => (
