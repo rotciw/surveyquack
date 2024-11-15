@@ -15,6 +15,7 @@ export function CategoryManagement({
   onCategoryStatsSelect,
   selectedCategoryStats 
 }: CategoryManagementProps) {
+  console.log(survey.categories);
   useEffect(() => {
     // Set first category as default if no active category
     if (!survey.active_category && survey.categories.length > 0) {

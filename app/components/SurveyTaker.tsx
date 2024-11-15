@@ -338,7 +338,7 @@ export function SurveyTaker({
             </motion.p>
           )}
 
-          {category.questions.map((question, questionIndex) => (
+          {category.questions.sort((a, b) => a.order - b.order).map((question, questionIndex) => (
             <motion.div
               key={question.id}
               initial={{ opacity: 0, x: -20 }}

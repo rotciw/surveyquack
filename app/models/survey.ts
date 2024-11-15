@@ -21,6 +21,7 @@ export interface SurveyResponse {
 
 export interface Category {
   id: string;
+  order: number;
   title: string;
   description?: string;
   questions: Question[];

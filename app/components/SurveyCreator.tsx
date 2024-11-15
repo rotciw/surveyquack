@@ -215,6 +215,7 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
               order: 0
             },
           ],
+          order: survey.categories.length
         },
       ],
     });

@@ -39,7 +39,7 @@ export function CategoryQuestions({
       onReorder={handleReorder}
       className="space-y-4"
     >
-      {questions.map((question, index) => (
+      {questions.sort((a, b) => a.order - b.order).map((question, index) => (
         <QuestionEditor
           key={question.id}
           question={question}
