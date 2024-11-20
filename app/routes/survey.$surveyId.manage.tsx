@@ -47,7 +47,10 @@ export const loader: LoaderFunction = async ({ request, params, context }) => {
   // Only set categories if they exist from the database
   const fullSurvey = {
     ...survey,
-    categories: categories || [] // Don't create new categories if none exist
+    categories: (categories || []).map(category => ({
+      ...category,
+      questions: category.questions || []
+    }))
   };
 
   return json({ 

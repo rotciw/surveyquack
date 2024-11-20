@@ -19,7 +19,7 @@ interface CategoryQuestionsProps {
   }
 
 export function CategoryQuestions({ 
-  questions, 
+  questions = [],
   activeCategory,
   onReorder,
   ...questionEditorProps 

@@ -206,6 +206,7 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
         {
           id: crypto.randomUUID(),
           title: "Untitled Category",
+          order: survey.categories.length,
           questions: [
             {
               id: crypto.randomUUID(),
@@ -215,7 +216,6 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
               order: 0
             },
           ],
-          order: survey.categories.length
         },
       ],
     });
@@ -365,9 +365,9 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
             />
 
             <div className="flex-1 overflow-y-auto p-4">
-              {activeCategory !== null && (
+              {activeCategory !== null && survey.categories[activeCategory] && (
                 <CategoryQuestions
-                  questions={survey.categories[activeCategory].questions}
+                  questions={survey.categories[activeCategory]?.questions || []}
                   activeCategory={activeCategory}
                   onReorder={(newOrder) => handleQuestionsReorder(activeCategory, newOrder)}
                   updateQuestionTitle={updateQuestionTitle}
