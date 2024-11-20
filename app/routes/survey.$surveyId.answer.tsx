@@ -31,8 +31,9 @@ export const loader: LoaderFunction = async ({ params, context, request }) => {
 
     const { data: categories, error: categoriesError } = await supabase
       .from('categories')
-      .select('id, title, description,questions(id, title, subtitle, type, options, scale_start, scale_end, scale_left_label, scale_right_label)')
-      .eq('survey_id', surveyId);
+      .select('id, title, description, order, questions(id, title, subtitle, type, order, options, scale_start, scale_end, scale_left_label, scale_right_label)')
+      .eq('survey_id', surveyId)
+      .order('order');
 
     if (categoriesError) {
       console.error("Error fetching categories:", categoriesError);
