@@ -34,13 +34,14 @@ export const action: ActionFunction = async ({ request, context }) => {
     if (surveyError) throw surveyError;
 
     // Create categories with their questions
-    for (const category of surveyData.categories) {
+    for (const [index, category] of surveyData.categories.entries()) {
       const { data: newCategory, error: categoryError } = await supabase
         .from('categories')
         .insert({
           title: category.title,
           description: category.description || '',
-          survey_id: survey.id
+          survey_id: survey.id,
+          order: index
         })
         .select()
         .single();
