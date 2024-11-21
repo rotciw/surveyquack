@@ -24,9 +24,11 @@ export function SurveyStatistics({ survey, responses, selectedCategoryId }: Surv
         )
       : responses;
 
-    const uniqueRespondents = new Set(relevantResponses.map(r => r.taker_id)).size;
+    // Filter out null responses
+    const validResponses = relevantResponses.filter(r => r.answer_value && r.answer_value.trim().length > 0);
     
-    // Calculate response rate per question for relevant category/categories
+    const uniqueRespondents = new Set(validResponses.map(r => r.taker_id)).size;
+    
     const categoriesToConsider = selectedCategoryId 
       ? survey.categories.filter(c => c.id === selectedCategoryId)
       : survey.categories;
@@ -34,7 +36,7 @@ export function SurveyStatistics({ survey, responses, selectedCategoryId }: Surv
     const questionResponseRates = categoriesToConsider.flatMap(cat => 
       cat.questions.map(q => {
         const questionResponses = new Set(
-          relevantResponses.filter(r => r.question_id === q.id).map(r => r.taker_id)
+          validResponses.filter(r => r.question_id === q.id).map(r => r.taker_id)
         ).size;
         return (questionResponses / uniqueRespondents) * 100;
       })
@@ -46,7 +48,7 @@ export function SurveyStatistics({ survey, responses, selectedCategoryId }: Surv
     
     return {
       uniqueRespondents,
-      totalResponses: relevantResponses.length,
+      totalResponses: validResponses.length,
       responseRate: responseRate.toFixed(1)
     };
   }, [responses, survey, selectedCategoryId]);
@@ -58,6 +60,12 @@ export function SurveyStatistics({ survey, responses, selectedCategoryId }: Surv
   const handleScreenshot = async () => {
     if (contentRef.current) {
       try {
+        // Dispatch event and wait for state updates to propagate
+        window.dispatchEvent(new Event('beforeScreenshot'));
+        
+        // Wait for state updates and re-render
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const canvas = await html2canvas(contentRef.current, {
           scale: 2,
           logging: false,
@@ -71,6 +79,8 @@ export function SurveyStatistics({ survey, responses, selectedCategoryId }: Surv
         link.click();
       } catch (error) {
         console.error('Screenshot failed:', error);
+      } finally {
+        window.dispatchEvent(new Event('afterScreenshot'));
       }
     }
   };

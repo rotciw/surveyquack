@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Question, SurveyResponse } from "~/models/survey";
 import { 
   BarChart, Bar, ResponsiveContainer, XAxis, YAxis, 
@@ -12,16 +12,38 @@ interface QuestionStatsProps {
 }
 
 export function QuestionStats({ question, responses }: QuestionStatsProps) {
+  const [showAllResponses, setShowAllResponses] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeScreenshot = () => {
+      setIsExporting(true);
+      setShowAllResponses(true);
+    };
+    const handleAfterScreenshot = () => {
+      setIsExporting(false);
+      setShowAllResponses(false);
+    };
+
+    window.addEventListener('beforeScreenshot', handleBeforeScreenshot);
+    window.addEventListener('afterScreenshot', handleAfterScreenshot);
+
+    return () => {
+      window.removeEventListener('beforeScreenshot', handleBeforeScreenshot);
+      window.removeEventListener('afterScreenshot', handleAfterScreenshot);
+    };
+  }, []);
+
   const data = useMemo(() => {
+    const validResponses = responses.filter(r => r.answer_value && r.answer_value.trim().length > 0);
+
     if (question.type === 'multiple_choice') {
-      // Initialize counts with all options set to 0
       const counts: Record<string, number> = {};
       question.options?.forEach(option => {
         counts[option] = 0;
       });
       
-      // Count responses
-      responses.forEach(r => {
+      validResponses.forEach(r => {
         counts[r.answer_value] = (counts[r.answer_value] || 0) + 1;
       });
 
@@ -31,7 +53,7 @@ export function QuestionStats({ question, responses }: QuestionStatsProps) {
 
     if (question.type === 'linear_scale') {
       const counts: Record<string, number> = {};
-      responses.forEach(r => {
+      validResponses.forEach(r => {
         counts[r.answer_value] = (counts[r.answer_value] || 0) + 1;
       });
       
@@ -53,15 +75,18 @@ export function QuestionStats({ question, responses }: QuestionStatsProps) {
     if (responses.length === 0) return null;
 
     if (question.type === 'linear_scale') {
-      const numericResponses = responses
-        .map(r => Number(r.answer_value))
+      const validResponses = responses
+        .map(r => r.answer_value)
+        .filter(value => value && value.trim().length > 0);
+
+      const numericResponses = validResponses
+        .map(r => Number(r))
         .filter(n => !isNaN(n));
 
       if (numericResponses.length === 0) return null;
 
       const average = numericResponses.reduce((a, b) => a + b, 0) / numericResponses.length;
       
-      // Find all modes (most common values)
       const counts = numericResponses.reduce((acc, val) => {
         acc[val] = (acc[val] || 0) + 1;
         return acc;
@@ -76,7 +101,7 @@ export function QuestionStats({ question, responses }: QuestionStatsProps) {
       return {
         average: average.toFixed(1),
         mode: modes,
-        total: responses.length
+        total: numericResponses.length
       };
     }
 
@@ -105,6 +130,39 @@ export function QuestionStats({ question, responses }: QuestionStatsProps) {
 
   // Calculate unique respondents
   const uniqueRespondents = new Set(responses.map(r => r.taker_id)).size;
+
+  if (question.type === 'free_text') {
+    // Filter out null, undefined, and empty string responses
+    const textResponses = responses
+      .map(r => r.answer_value)
+      .filter(value => value && value.trim().length > 0);
+    
+    const shouldShowAll = showAllResponses || isExporting;
+    const displayResponses = shouldShowAll ? textResponses : textResponses.slice(0, 3);
+    
+    return (
+      <div className="space-y-4">
+        <div className="text-sm text-gray-500 mb-2">
+          {textResponses.length} responses
+        </div>
+        <div className="space-y-2">
+          {displayResponses.map((response, index) => (
+            <div key={index} className="p-4 bg-gray-50 rounded-lg">
+              <p className="text-gray-700 whitespace-pre-wrap">{response}</p>
+            </div>
+          ))}
+        </div>
+        {!shouldShowAll && textResponses.length > 3 && (
+          <button
+            onClick={() => setShowAllResponses(true)}
+            className="text-blue-500 text-sm hover:underline"
+          >
+            Show {textResponses.length - 3} more responses
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -168,23 +226,6 @@ export function QuestionStats({ question, responses }: QuestionStatsProps) {
             </div>
           )}
         </>
-      )}
-
-      {question.type === 'free_text' && (
-        <div className="space-y-4 max-h-96 overflow-y-auto">
-          {responses.length === 0 ? (
-            <p className="text-gray-500 italic">No responses yet</p>
-          ) : (
-            responses.map((response) => (
-              <div 
-                key={response.id} 
-                className="p-4 bg-gray-50 rounded-lg"
-              >
-                <p className="text-gray-700 whitespace-pre-wrap">{response.answer_value}</p>
-              </div>
-            ))
-          )}
-        </div>
       )}
     </motion.div>
   );
