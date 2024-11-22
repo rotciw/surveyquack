@@ -132,7 +132,6 @@ export function QuestionStats({ question, responses }: QuestionStatsProps) {
   const uniqueRespondents = new Set(responses.map(r => r.taker_id)).size;
 
   if (question.type === 'free_text') {
-    // Filter out null, undefined, and empty string responses
     const textResponses = responses
       .map(r => r.answer_value)
       .filter(value => value && value.trim().length > 0);
@@ -141,26 +140,36 @@ export function QuestionStats({ question, responses }: QuestionStatsProps) {
     const displayResponses = shouldShowAll ? textResponses : textResponses.slice(0, 3);
     
     return (
-      <div className="space-y-4">
-        <div className="text-sm text-gray-500 mb-2">
-          {textResponses.length} responses
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-lg p-6 shadow-sm"
+      >
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="font-medium text-gray-900">{question.title}</h3>
         </div>
-        <div className="space-y-2">
-          {displayResponses.map((response, index) => (
-            <div key={index} className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-gray-700 whitespace-pre-wrap">{response}</p>
-            </div>
-          ))}
+
+        <div className="space-y-4">
+          <div className="text-sm text-gray-500 mb-2">
+            {textResponses.length} responses
+          </div>
+          <div className="space-y-2">
+            {displayResponses.map((response, index) => (
+              <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                <p className="text-gray-700 whitespace-pre-wrap">{response}</p>
+              </div>
+            ))}
+          </div>
+          {!shouldShowAll && textResponses.length > 3 && (
+            <button
+              onClick={() => setShowAllResponses(true)}
+              className="text-blue-500 text-sm hover:underline"
+            >
+              Show {textResponses.length - 3} more responses
+            </button>
+          )}
         </div>
-        {!shouldShowAll && textResponses.length > 3 && (
-          <button
-            onClick={() => setShowAllResponses(true)}
-            className="text-blue-500 text-sm hover:underline"
-          >
-            Show {textResponses.length - 3} more responses
-          </button>
-        )}
-      </div>
+      </motion.div>
     );
   }
 
