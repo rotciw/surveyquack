@@ -1,9 +1,10 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import html2canvas from "html2canvas";
 import type { Survey, SurveyResponse } from "~/models/survey";
 import { StatCard } from "./StatCard";
 import { QuestionStats } from "./QuestionStats";
+import { useEventSourceWithRetry } from "~/utils/connection-helper";
 
 interface SurveyStatisticsProps {
   survey: Survey;
@@ -11,9 +12,17 @@ interface SurveyStatisticsProps {
   selectedCategoryId: string | null;
 }
 
-export function SurveyStatistics({ survey, responses, selectedCategoryId }: SurveyStatisticsProps) {
+export function SurveyStatistics({ survey, responses: initialResponses, selectedCategoryId }: SurveyStatisticsProps) {
   const contentRef = useRef<HTMLDivElement>(null);
-  console.log(survey.categories);
+  const [responses, setResponses] = useState(initialResponses);
+
+  useEventSourceWithRetry(
+    `/api/survey/${survey.id}/stats-stream`,
+    (newResponses) => {
+      setResponses(newResponses);
+    }
+  );
+
   const stats = useMemo(() => {
     // Filter responses by selected category if one is selected
     const relevantResponses = selectedCategoryId 
