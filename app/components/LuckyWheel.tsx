@@ -32,8 +32,8 @@ export function LuckyWheel({ onResult, hasSpun }: LuckyWheelProps) {
     if (isSpinning || hasSpun) return;
     setIsSpinning(true);
 
-    // First determine if it's a win with 10% probability
-    const isWin = Math.random() < 0.05;
+    // First determine if it's a win with 1% probability
+    const isWin = Math.random() < 0.01;
 
     // Get indices of all segments that match our win/lose condition
     const matchingIndices = segments
