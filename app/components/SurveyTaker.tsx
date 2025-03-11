@@ -54,6 +54,19 @@ export function SurveyTaker({
   const fetcher = useFetcher();
   const [categorySubmissions, setCategorySubmissions] = useState(initialCategorySubmissions);
   
+  const [debouncedSave] = useState(() => {
+    let timeoutId: NodeJS.Timeout;
+    return (questionId: string, value: string) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        fetcher.submit(
+          { answer: JSON.stringify({ questionId, value }) },
+          { method: "post", action: `/api/survey/${survey.id}/save-answer` }
+        );
+      }, 1000); // Increased from 500ms to 1500ms
+    };
+  });
+
   useEffect(() => {
     const eventSource = new EventSource(`/api/survey/${survey.id}/status`);
     
@@ -119,27 +132,26 @@ export function SurveyTaker({
     }
   }, [fetcher.state, saveStatus]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeCategory]);
+
   const handleAnswerChange = (questionId: string, value: string) => {
     // Check if current category is submitted
     if (activeCategory && categorySubmissions.includes(activeCategory)) {
-      return; // Prevent changes if category is submitted
+      return;
     }
     
     const existingAnswer = answers.find(a => a.questionId === questionId);
-    
-    if (existingAnswer && existingAnswer.value === value) {
-      // If clicking the same answer, remove it (deselect)
-      setAnswers(prevAnswers => prevAnswers.filter(a => a.questionId !== questionId));
-      
-      fetcher.submit(
-        { answer: JSON.stringify({ questionId, value: null }) },
-        { method: "post", action: `/api/survey/${survey.id}/save-answer` }
-      );
-    } else {
-      // Normal answer selection logic
-      const answer = { questionId, value };
+    const question = survey.categories
+      .flatMap(c => c.questions)
+      .find(q => q.id === questionId);
+
+    if (question?.type === 'free_text') {
+      // For text inputs, update state immediately but debounce the API call
       setAnswers(prevAnswers => {
         const existingAnswerIndex = prevAnswers.findIndex(a => a.questionId === questionId);
+        const answer = { questionId, value };
         if (existingAnswerIndex > -1) {
           return prevAnswers.map((a, index) =>
             index === existingAnswerIndex ? answer : a
@@ -147,11 +159,32 @@ export function SurveyTaker({
         }
         return [...prevAnswers, answer];
       });
+      debouncedSave(questionId, value);
+    } else {
+      // For radio buttons, keep existing immediate save logic
+      if (existingAnswer && existingAnswer.value === value) {
+        setAnswers(prevAnswers => prevAnswers.filter(a => a.questionId !== questionId));
+        fetcher.submit(
+          { answer: JSON.stringify({ questionId, value: null }) },
+          { method: "post", action: `/api/survey/${survey.id}/save-answer` }
+        );
+      } else {
+        const answer = { questionId, value };
+        setAnswers(prevAnswers => {
+          const existingAnswerIndex = prevAnswers.findIndex(a => a.questionId === questionId);
+          if (existingAnswerIndex > -1) {
+            return prevAnswers.map((a, index) =>
+              index === existingAnswerIndex ? answer : a
+            );
+          }
+          return [...prevAnswers, answer];
+        });
 
-      fetcher.submit(
-        { answer: JSON.stringify(answer) },
-        { method: "post", action: `/api/survey/${survey.id}/save-answer` }
-      );
+        fetcher.submit(
+          { answer: JSON.stringify(answer) },
+          { method: "post", action: `/api/survey/${survey.id}/save-answer` }
+        );
+      }
     }
   };
 
@@ -253,15 +286,15 @@ export function SurveyTaker({
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="max-w-3xl mx-auto p-8 bg-white relative mt-12"
+      className="max-w-3xl mx-auto p-8 bg-white relative mt-12 pb-24"
     >
       {saveStatus && (
         <AnimatePresence>
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-4 right-4"
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-4 right-4 z-50"
           >
             <Toast 
               message={saveStatus === 'saving' ? 'Saving...' : 'All changes saved'} 
