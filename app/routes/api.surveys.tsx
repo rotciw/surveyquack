@@ -24,7 +24,7 @@ export const action: ActionFunction = async ({ request, context }) => {
       .from('surveys')
       .insert({
         title: surveyData.title,
-        status: 'draft',
+        status: 'open',
         user_id: user.id,
         created_at: new Date().toISOString()
       })

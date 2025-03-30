@@ -1,12 +1,21 @@
 import { Link } from "@remix-run/react";
 import type { Survey } from "~/models/survey";
-import { useState } from "react";
-import { useFetcher } from "@remix-run/react";
+import { useState, useEffect } from "react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import { CreateSurveyModal } from "~/components/CreateSurveyModal";
+
+// Define the response type for delete operation
+type DeleteResponse = {
+  success: boolean;
+  message?: string;
+};
 
 export function Dashboard({ surveys }: { surveys: Survey[] }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const fetcher = useFetcher();
+  const [deletingSurveyId, setDeletingSurveyId] = useState<string | null>(null);
+  const createFetcher = useFetcher();
+  const deleteFetcher = useFetcher<DeleteResponse>();
+  const navigate = useNavigate();
 
   const handleCreateSurvey = () => {
     const initialSurvey = {
@@ -23,12 +32,41 @@ export function Dashboard({ surveys }: { surveys: Survey[] }) {
       }]
     };
 
-    fetcher.submit(
+    createFetcher.submit(
       { survey: JSON.stringify(initialSurvey) },
       { method: "post", action: "/api/surveys" }
     );
     setShowCreateModal(false);
   };
+
+  const handleDeleteSurvey = (surveyId: string) => {
+    if (window.confirm("Are you sure you want to delete this survey? This action cannot be undone.")) {
+      setDeletingSurveyId(surveyId);
+      deleteFetcher.submit(
+        {},
+        { method: "post", action: `/api/survey/${surveyId}/delete` }
+      );
+    }
+  };
+
+  // Use useEffect to handle the completion of the delete operation
+  useEffect(() => {
+    // Only proceed if we were in the process of deleting
+    if (deletingSurveyId && deleteFetcher.state === 'idle') {
+      if (deleteFetcher.data) {
+        // Check if there was an error
+        if (!deleteFetcher.data.success) {
+          alert(deleteFetcher.data.message || "Failed to delete survey");
+        } else {
+          console.log("Survey deleted successfully");
+          // Use navigate to refresh the current page
+          navigate(".", { replace: true });
+        }
+      }
+      // Reset deleting state whether successful or not
+      setDeletingSurveyId(null);
+    }
+  }, [deleteFetcher.state, deleteFetcher.data, deletingSurveyId, navigate]);
 
   if (!surveys || surveys.length === 0) {
     return (
@@ -83,7 +121,12 @@ export function Dashboard({ surveys }: { surveys: Survey[] }) {
               <tr key={survey.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900">
-                    {survey.title || "Untitled Survey"}
+                  <Link
+                      to={`/survey/${survey.id}/manage`}
+                      className="text-indigo-600 hover:text-indigo-900 text-black"
+                    >
+                      {survey.title || "Untitled Survey"}
+                    </Link>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -96,7 +139,11 @@ export function Dashboard({ surveys }: { surveys: Survey[] }) {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(survey.created_at).toLocaleDateString()}
+                  {new Date(survey.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                  })}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end space-x-3">
@@ -112,6 +159,13 @@ export function Dashboard({ surveys }: { surveys: Survey[] }) {
                     >
                       Manage
                     </Link>
+                    <button
+                      onClick={() => handleDeleteSurvey(survey.id)}
+                      disabled={deletingSurveyId === survey.id}
+                      className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                    >
+                      {deletingSurveyId === survey.id ? "Deleting..." : "Delete"}
+                    </button>
                   </div>
                 </td>
               </tr>
