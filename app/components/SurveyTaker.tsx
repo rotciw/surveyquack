@@ -334,7 +334,7 @@ export function SurveyTaker({
         </div>
       )}
 
-      {isLastCategory(activeCategory || undefined, survey.categories) && 
+      {/* {isLastCategory(activeCategory || undefined, survey.categories) && 
        categorySubmissions.includes(activeCategory || '') && (
         <WheelModal
           isOpen={showWheel}
@@ -345,7 +345,7 @@ export function SurveyTaker({
             console.log('Won prize:', prize);
           }}
         />
-      )}
+      )} */}
 
       {categoriesToShow.map((category) => (
         <motion.div 
