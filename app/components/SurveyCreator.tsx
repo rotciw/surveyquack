@@ -19,6 +19,7 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
   const [activeQuestion, setActiveQuestion] = useState(0);
   const [uniqueUrl, setUniqueUrl] = useState<string | null>(initialUrl || null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [deletedQuestions, setDeletedQuestions] = useState<string[]>([]);
 
   useEffect(() => {
     if (fetcher.data && fetcher.data.survey && !surveyId) {
@@ -169,11 +170,19 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
   const removeQuestion = (categoryIndex: number, questionIndex: number) => {
     if (survey.categories[categoryIndex].questions.length > 1) {
       const newCategories = [...survey.categories];
+      const questionToRemove = newCategories[categoryIndex].questions[questionIndex];
+      
+      // If the question has an ID (exists in database), track it for later deletion
+      if (surveyId && questionToRemove.id) {
+        setDeletedQuestions(prev => [...prev, questionToRemove.id]);
+      }
+      
       newCategories[categoryIndex].questions.splice(questionIndex, 1);
       newCategories[categoryIndex].questions = newCategories[categoryIndex].questions.map((q, i) => ({
         ...q,
         order: i
       }));
+      
       setSurvey({ ...survey, categories: newCategories });
       setActiveQuestion(Math.min(questionIndex, newCategories[categoryIndex].questions.length - 1));
     }
@@ -271,13 +280,45 @@ export function SurveyCreator({ user, surveyId, initialSurvey, initialUrl }: {
   
   const handleSave = () => {
     setToast({ message: 'Saving survey...', type: 'info' });
-    fetcher.submit(
-      { survey: JSON.stringify(survey) },
-      { 
-        method: "post", 
-        action: `/api/survey/${surveyId}/save`
-      }
-    );
+    
+    // If we have deleted questions, delete them from the database
+    if (deletedQuestions.length > 0 && surveyId) {
+      // Delete each question in sequence
+      const deleteQuestions = async () => {
+        for (const questionId of deletedQuestions) {
+          await fetch(`/api/survey/${surveyId}/question/delete`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({ questionId }),
+          });
+        }
+        
+        // Clear the deleted questions array
+        setDeletedQuestions([]);
+        
+        // Then save the survey normally
+        fetcher.submit(
+          { survey: JSON.stringify(survey) },
+          { 
+            method: "post", 
+            action: `/api/survey/${surveyId}/save`
+          }
+        );
+      };
+      
+      deleteQuestions();
+    } else {
+      // Normal save without deleted questions
+      fetcher.submit(
+        { survey: JSON.stringify(survey) },
+        { 
+          method: "post", 
+          action: `/api/survey/${surveyId}/save`
+        }
+      );
+    }
   };
   const updateScaleLabel = (categoryIndex: number, questionIndex: number, side: 'left' | 'right', value: string) => {
     const newCategories = [...survey.categories];

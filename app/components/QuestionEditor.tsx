@@ -50,13 +50,35 @@ export function QuestionEditor({
             ⋮⋮
           </div>
           <div className="flex-1">
-            <input
-              type="text"
-              value={question.title}
-              onChange={(e) => updateQuestionTitle(activeCategory, index, e.target.value)}
-              className="w-full bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-300 rounded p-1 font-medium text-base mb-2"
-              placeholder="Question Title"
-            />
+            <div className="flex justify-between items-start mb-2">
+              <input
+                type="text"
+                value={question.title}
+                onChange={(e) => updateQuestionTitle(activeCategory, index, e.target.value)}
+                className="flex-1 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-300 rounded p-1 font-medium text-base"
+                placeholder="Question Title"
+              />
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => duplicateQuestion(activeCategory, index)}
+                  className="p-1 text-gray-600 hover:bg-gray-100 rounded"
+                  title="Duplicate question"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => removeQuestion(activeCategory, index)}
+                  className="p-1 text-red-600 hover:bg-red-50 rounded"
+                  title="Delete question"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
             <QuestionTypeSelector
               value={question.type}
               onChange={(type) => updateQuestionType(activeCategory, index, type)}
